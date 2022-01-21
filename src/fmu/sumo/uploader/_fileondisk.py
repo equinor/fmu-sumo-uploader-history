@@ -29,6 +29,9 @@ from azure.core.exceptions import ResourceExistsError
 
 # pylint: disable=C0103 # allow non-snake case variable names
 
+logger = logging.getLogger(__name__)
+logger.setLevel(logging.CRITICAL)
+
 
 def path_to_yaml_path(path):
     """
@@ -78,10 +81,8 @@ class FileOnDisk:
         self.path = os.path.abspath(path)
         self.metadata = parse_yaml(self.metadata_path)
 
-
-
         self._size = None
-        
+
         self.basename = os.path.basename(self.path)
         self.dir_name = os.path.dirname(self.path)
 
@@ -92,19 +93,20 @@ class FileOnDisk:
 
         self.metadata["_sumo"] = {}
 
-        #if self.metadata["class"] == "seismic":
+        # if self.metadata["class"] == "seismic":
         if self.metadata["data"]["format"] == "segy":
             self.metadata["_sumo"]["blob_size"] = 0
             self.manifest = json.loads(scan.main([self.path]))
             self.metadata["_sumo"]["blob_sha256"] = self.manifest["guid"]
+            self.byte_string = None
 
         else:
             self.byte_string = file_to_byte_string(path)
             self.metadata["_sumo"]["blob_size"] = len(self.byte_string)
             digester = hashlib.md5(self.byte_string)
-            self.metadata["_sumo"]["blob_md5"] = base64.b64encode(digester.digest()).decode(
-                "utf-8"
-            )
+            self.metadata["_sumo"]["blob_md5"] = base64.b64encode(
+                digester.digest()
+            ).decode("utf-8")
 
     def __repr__(self):
         if not self.metadata:
@@ -113,7 +115,8 @@ class FileOnDisk:
         s = f"\n# {self.__class__}"
         s += f"\n# Disk path: {self.path}"
         s += f"\n# Basename: {self.basename}"
-        s += f"\n# Byte string length: {len(self.byte_string)}"
+        if self.byte_string is not None:
+            s += f"\n# Byte string length: {len(self.byte_string)}"
 
         if self.sumo_object_id is None:
             s += "\n# Not uploaded to Sumo"
@@ -149,6 +152,8 @@ class FileOnDisk:
     def upload_to_sumo(self, sumo_parent_id, sumo_connection):
         """Upload this file to Sumo"""
 
+        logger.debug("Starting upload_to_sumo()")
+
         if not sumo_parent_id:
             raise ValueError(
                 f"Upload failed, sumo_parent_id passed to upload_to_sumo: {sumo_parent_id}"
@@ -159,9 +164,10 @@ class FileOnDisk:
 
         result = {}
 
-        backoff = [1,3,9]
+        backoff = [1, 3, 9]
 
         for i in backoff:
+            logger.debug("backoff in outer loop is %s", str(i))
 
             try:
 
@@ -184,6 +190,7 @@ class FileOnDisk:
                 result["metadata_file_size"] = self.size
 
             except TransientError as err:
+                logger.debug("TransientError on blob upload. Sleeping %s", str(i))
                 result["status"] = "failed"
                 result["metadata_upload_response_status_code"] = err.code
                 result["metadata_upload_response_text"] = err.message
@@ -205,7 +212,7 @@ class FileOnDisk:
 
         if result["metadata_upload_response_status_code"] not in [200, 201]:
             return result
-            
+
         self.sumo_parent_id = sumo_parent_id
         self.sumo_object_id = response.json().get("objectid")
 
@@ -216,35 +223,38 @@ class FileOnDisk:
         _t0_blob = time.perf_counter()
         upload_response = {}
         for i in backoff:
+            logger.debug("backoff in inner loop is %s", str(i))
             try:
-                #if self.metadata["class"] == "seismic":
+                # if self.metadata["class"] == "seismic":
                 if self.metadata["data"]["format"] == "segy":
-                    with tempfile.NamedTemporaryFile(mode='w+') as temp:
+                    with tempfile.NamedTemporaryFile(mode="w+") as temp:
                         json.dump(self.manifest, temp)
                         temp.flush()
-                        args = ["--output-auth-method",
-                                "connection-string",
-                                "--output-connection-string",
-                                "BlobEndpoint=" + response.json()["blob_url"],
-                                temp.name,
-                                self.path]
+                        args = [
+                            "--output-auth-method",
+                            "connection-string",
+                            "--output-connection-string",
+                            "BlobEndpoint=" + response.json()["blob_url"],
+                            temp.name,
+                            self.path,
+                        ]
                         upload.main(args)
                     upload_response["status_code"] = 200
                     upload_response["text"] = "File hopefully uploaded to Oneseimic"
-                else:    
+                else:
                     response = self._upload_byte_string(
-                    sumo_connection=sumo_connection,
-                    object_id=self.sumo_object_id,
-                    blob_url=blob_url,
+                        sumo_connection=sumo_connection,
+                        object_id=self.sumo_object_id,
+                        blob_url=blob_url,
                     )
                     upload_response["status_code"] = response.status_code
                     upload_response["text"] = response.text
 
-
-
                 _t1_blob = time.perf_counter()
 
-                result["blob_upload_response_status_code"] = upload_response["status_code"]
+                result["blob_upload_response_status_code"] = upload_response[
+                    "status_code"
+                ]
                 result["blob_upload_response_text"] = upload_response["text"]
                 result["blob_upload_time_start"] = _t0_blob
                 result["blob_upload_time_end"] = _t1_blob
@@ -254,39 +264,41 @@ class FileOnDisk:
                 upload_response["text"] = "File hopefully uploaded to Oneseimic"
                 _t1_blob = time.perf_counter()
 
-                result["blob_upload_response_status_code"] = upload_response["status_code"]
+                result["blob_upload_response_status_code"] = upload_response[
+                    "status_code"
+                ]
                 result["blob_upload_response_text"] = upload_response["text"]
                 result["blob_upload_time_start"] = _t0_blob
                 result["blob_upload_time_end"] = _t1_blob
                 result["blob_upload_time_elapsed"] = _t1_blob - _t0_blob
-                
+
             except OSError as err:
-                logging.info(f"Upload failed: {err}")
+                logger.debug("Upload failed: %s", str(err))
                 result["status"] = "failed"
-                self._delete_metadata(self.sumo_object_id)
+                self._delete_metadata(sumo_connection, self.sumo_object_id)
                 return result
             except TransientError as err:
+                logger.debug("Got TransientError. Sleeping for %i seconds", str(i))
                 result["status"] = "failed"
                 time.sleep(i)
                 continue
             except AuthenticationError as err:
-                logging.info(f"Upload failed: {upload_response['text']}")
+                logger.debug("Upload failed: %s", upload_response["text"])
                 result["status"] = "rejected"
-                self._delete_metadata(self.sumo_object_id)
+                self._delete_metadata(sumo_connection, self.sumo_object_id)
                 return result
             except PermanentError as err:
-                logging.info(f"Upload failed: {upload_response['text']}")
+                logger.debug("Upload failed: %s", upload_response["text"])
                 result["status"] = "rejected"
-                self._delete_metadata(self.sumo_object_id)
+                self._delete_metadata(sumo_connection, self.sumo_object_id)
                 return result
 
             break
 
-            
         if upload_response["status_code"] not in [200, 201]:
-            logging.info(f"Upload failed: {upload_response['text']}")
+            logger.debug("Upload failed: %s", upload_response["text"])
             result["status"] = "failed"
-            self._delete_metadata(self.sumo_object_id)
+            self._delete_metadata(sumo_connection, self.sumo_object_id)
         else:
             result["status"] = "ok"
         return result

@@ -1,8 +1,4 @@
-"""
-
-    The CaseOnDisk class objectifies an FMU case (results) as it appears on the disk.
-
-"""
+"""Objectify an FMU case (results) as it appears on the disk."""
 
 import os
 import glob
@@ -63,14 +59,17 @@ class CaseOnDisk:
     """
 
     def __init__(self, case_metadata_path: str, sumo_connection, verbosity="DEBUG"):
-        """
-        case_metadata_path (str): Path to case_metadata for case
-        api (SumoConnection instance): Connection to Sumo.
+        """Initialize CaseOnDisk.
+
+        Args:
+            case_metadata_path (str): Path to case_metadata for case
+            sumo_connection (fmu.sumo.SumoConnection): Connection to Sumo.
+            verbosity (str): Python logging level.
         """
 
         logger.setLevel(level=verbosity)
 
-        self.sumo_connection = sumo_connection        
+        self.sumo_connection = sumo_connection
 
         logger.debug("case metadata path: %s", case_metadata_path)
         self.case_metadata = _load_case_metadata(case_metadata_path)
@@ -110,19 +109,25 @@ class CaseOnDisk:
 
     def add_files(self, search_string):
         """Add files to the case, based on search string"""
+
+        logger.info("Searching for files at %s", search_string)
         file_paths = _find_file_paths(search_string)
 
         for file_path in file_paths:
             try:
                 file = FileOnDisk(path=file_path)
                 self._files.append(file)
+                logger.info("File appended: %s", file_path)
 
             except IOError as err:
                 info = f"{err}. No metadata, skipping file."
                 warnings.warn(info)
 
     def _get_sumo_parent_id(self):
-        """Call sumo, check if the case is already there. Use fmu_case_uuid for this."""
+        """Get the sumo parent ID.
+
+        Call sumo, check if the case is already there. Use fmu_case_uuid for this."""
+
         query = f"fmu.case.uuid:{self.fmu_case_uuid}"
         search_results = self.sumo_connection.api.searchroot(query, search_size=2)
 
@@ -144,14 +149,15 @@ class CaseOnDisk:
         )
 
     def register(self):
-        """
-        Register this case on Sumo.
+        """Register this case on Sumo.
+
         Assumptions: If registering an already existing case, it will be overwritten.
         ("register" might be a bad word for this...)
 
         Returns:
             sumo_parent_id (uuid4): Unique ID for this case on Sumo
         """
+
         logger.info("Registering case on Sumo")
 
         sumo_parent_id = self._upload_case_metadata(self.case_metadata)
@@ -162,7 +168,8 @@ class CaseOnDisk:
         return sumo_parent_id
 
     def _upload_case_metadata(self, case_metadata: dict):
-        """Given a case_metadata dict, upload it to Sumo"""
+        """Upload case metadata to Sumo."""
+
         response = self.sumo_connection.api.save_top_level_json(json=case_metadata)
 
         returned_object_id = response.json().get("objectid")
@@ -170,7 +177,8 @@ class CaseOnDisk:
         return returned_object_id
 
     def _get_fmu_case_uuid(self):
-        """Look up and return case_id from case_metadata"""
+        """Return case_id from case_metadata."""
+
         fmu_case_uuid = self.case_metadata.get("fmu").get("case").get("uuid")
 
         if not fmu_case_uuid:
@@ -179,17 +187,14 @@ class CaseOnDisk:
         return fmu_case_uuid
 
     def upload(self, threads=4, max_attempts=1, register_case=False):
-        """
-        Trigger upload of files in this case.
+        """Trigger upload of files.
 
-            Get sumo_parent_id. If None, case is not registered on Sumo.
+        Get sumo_parent_id. If None, case is not registered on Sumo.
 
-            Upload all indexed files. Collect the files that have been uploaded OK, the
-            ones that have failed and the ones that have been rejected.
+        Upload all indexed files. Collect the files that have been uploaded OK, the
+        ones that have failed and the ones that have been rejected.
 
-            Retry the failed uploads X times.
-
-        """
+        Retry the failed uploads X times."""
 
         if self.sumo_parent_id is None:
             logger.info("Case is not registered on Sumo")
@@ -212,6 +217,8 @@ class CaseOnDisk:
 
         attempts = 0
         _t0 = time.perf_counter()
+
+        logger.debug("files_to_upload: %s", files_to_upload)
 
         while files_to_upload and attempts < max_attempts:
             upload_results = upload_files(
@@ -239,7 +246,7 @@ class CaseOnDisk:
                 )
             )
 
-        if files_to_upload:
+        if failed_uploads:
             warnings.warn("Stopping after {} attempts".format(attempts))
 
         _dt = time.perf_counter() - _t0
@@ -300,20 +307,22 @@ class CaseOnDisk:
                     f"{u.get('blob_upload_response_status_text')}"
                 )
 
-        print(
-            f"Total: {len(self.files)}"
-            f"\nOK: {len(ok_uploads)}"
-            f"\nFailures: {len(failed_uploads)}"
-            f"\nRejected: {len(rejected_uploads)}"
-            f"\nWall time: {_dt} seconds"
-        )
+        logger.info("Summary:")
+        logger.info("Total files count: %s", str(len(self.files)))
+        logger.info("OK: %s", str(len(ok_uploads)))
+        logger.info("Failed: %s", str(len(failed_uploads)))
+        logger.info("Rejected: %s", str(len(rejected_uploads)))
+        logger.info("Wall time: %s sec", str(_dt))
 
         return ok_uploads
 
+
 def _sanitize_datetimes(data):
-    """Given a dictionary, find and replace all datetime objects
+    """Sanitize datetimes.
+
+    Given a dictionary, find and replace all datetime objects
     with isoformat string, so that it does not cause problems for
-    JSON later on"""
+    JSON later on."""
 
     if isinstance(data, datetime.datetime):
         return data.isoformat()
@@ -327,8 +336,9 @@ def _sanitize_datetimes(data):
 
     return data
 
+
 def _load_case_metadata(case_metadata_path: str):
-    """Given case_metadata path, load the yaml file from disk, return dict"""
+    """Load the case metadata."""
 
     if not os.path.isfile(case_metadata_path):
         raise IOError(f"case metadata not found: {case_metadata_path}")
@@ -343,7 +353,8 @@ def _load_case_metadata(case_metadata_path: str):
 
 
 def _find_file_paths(search_string):
-    """Given a search string, return yielded valid files as list of FileOnDisk instances"""
+    """Find files and return as list of FileOnDisk instances."""
+
     files = [f for f in glob.glob(search_string) if os.path.isfile(f)]
 
     if len(files) == 0:
@@ -357,9 +368,10 @@ def _find_file_paths(search_string):
 
 
 def _calculate_upload_stats(uploads):
-    """
-    Given a list of results from file upload, calculate and return timing statistics for uploads
-    """
+    """Calculate upload statistics.
+
+    Given a list of results from file upload, calculate and return
+    timing statistics for uploads."""
 
     df = pd.DataFrame().from_dict(uploads)
 

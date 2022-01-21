@@ -7,7 +7,7 @@ setup(
     name="fmu-sumo",
     description="Python package for interacting with Sumo in an FMU setting",
     url="https://github.com/equinor/fmu-sumo",
-    version="0.1.2",
+    version="0.1.3",
     author="Equinor",
     license="GPLv3",
     keywords="fmu, sumo",
@@ -21,10 +21,11 @@ setup(
     ],
     author_email="peesv@equinor.com",
     entry_points={
-        "ert": ["fmu_sumo_jobs = jobs.hook_implementations.jobs"],
-        "console_scripts": [
-            "sumo_upload=fmu.sumo.uploader.scripts.fm_fmu_uploader:main"
+        "ert": [
+            "fmu_sumo_jobs = jobs.hook_implementations.jobs",
+            "sumo_upload = fmu.sumo.uploader.scripts.sumo_upload",
         ],
+        "console_scripts": ["sumo_upload=fmu.sumo.uploader.scripts.sumo_upload:main"],
     },
     install_requires=[
         "PyYAML",
@@ -32,6 +33,7 @@ setup(
         "sumo-wrapper-python",
         "setuptools",
         "oneseismic",
+        "azure-core",
     ],
     python_requires=">=3.6",
     packages=find_packages("src"),
