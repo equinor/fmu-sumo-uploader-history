@@ -202,10 +202,27 @@ class CaseOnDisk:
             if register_case:
                 self.register()
             else:
-                raise IOError(
-                    "Case is not registered on sumo. "
-                    "Set register_case to True if you want to do so."
+                # We catch the situation where case is not registered on Sumo but
+                # an upload is attempted anyway. In the FMU context, this can happen
+                # if something goes wrong with the initial case metadata creation and
+                # upload. If, for some reason, this fails and the case is never uploaded
+                # to Sumo, we (currently) want this script to not fail (and stop the
+                # workflow). Outside FMU context, this can be different and we retain
+                # the possibility for allowing this script to register the case.
+                
+                logger.info("Case was not found on Sumo. If you are in the FMU context "
+                            "something may have gone wrong with the case registration "
+                            "or you have not specified that the case shall be uploaded."
+                            "A warning will be issued, and the script will stop. "
+                            "If you are NOT in the FMU context, you can specify that "
+                            "this script also registers the case by passing "
+                            "register=True. This should not be done in the FMU context."
                 )
+                warnings.warn(
+                    "Case is not registered on Sumo.",
+                    UserWarning,
+                )
+                return
 
         if not self.files:
             raise FileExistsError("No files to upload. Check search string.")

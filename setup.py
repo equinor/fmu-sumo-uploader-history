@@ -7,7 +7,7 @@ setup(
     name="fmu-sumo",
     description="Python package for interacting with Sumo in an FMU setting",
     url="https://github.com/equinor/fmu-sumo",
-    version="0.1.3",
+    version="0.1.4",
     author="Equinor",
     license="GPLv3",
     keywords="fmu, sumo",

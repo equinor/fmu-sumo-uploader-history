@@ -43,8 +43,7 @@ def test_upload_without_registration():
         case_metadata_path="tests/data/test_case_080/case.yml",
         sumo_connection=sumo_connection,
     )
-    with pytest.raises(IOError):
-        # assert that uploading withouth registering fails
+    with pytest.warns(UserWarning, match="Case is not registered"):
         e.upload(threads=1)
 
 
