@@ -44,6 +44,7 @@ def test_upload_without_registration():
         sumo_connection=sumo_connection,
     )
     with pytest.warns(UserWarning, match="Case is not registered"):
+
         e.upload(threads=1)
 
 
