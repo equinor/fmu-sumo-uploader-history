@@ -34,7 +34,7 @@ setup(
         "setuptools",
         "oneseismic",
         "azure-core",
-        "deprecated"
+        "deprecation"
     ],
     python_requires=">=3.6",
     packages=find_packages("src"),
