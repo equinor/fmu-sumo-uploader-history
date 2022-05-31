@@ -134,19 +134,17 @@ class FileOnDisk:
         return self._size
 
     def _upload_metadata(self, sumo_connection, sumo_parent_id):
-        response = sumo_connection.api.save_child_level_json(
-            json=self.metadata, parent_id=sumo_parent_id
-        )
+        path = f"/objects('{sumo_parent_id}')"
+        response = sumo_connection.api.post(path=path, json=self.metadata)
         return response
 
     def _upload_byte_string(self, sumo_connection, object_id, blob_url):
-        response = sumo_connection.api.save_blob(
-            blob=self.byte_string, object_id=object_id, url=blob_url
-        )
+        response = sumo_connection.api.blob_client.upload_blob(blob=self.byte_string, url=blob_url)
         return response
 
     def _delete_metadata(self, sumo_connection, object_id):
-        response = sumo_connection.api.delete_object(object_id=object_id)
+        path = f"/objects('{object_id}')"
+        response = sumo_connection.api.delete(path=path)
         return response
 
     def upload_to_sumo(self, sumo_parent_id, sumo_connection):

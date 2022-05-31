@@ -129,7 +129,7 @@ class CaseOnDisk:
         Call sumo, check if the case is already there. Use fmu_case_uuid for this."""
 
         query = f"fmu.case.uuid:{self.fmu_case_uuid}"
-        search_results = self.sumo_connection.api.searchroot(query, search_size=2)
+        search_results = self.sumo_connection.api.get("/searchroot", query=query, size=2, **{'from': 0})
 
         # To catch crazy rare situation when index is empty (first upload to new index)
         if not search_results.get("hits"):
@@ -170,7 +170,7 @@ class CaseOnDisk:
     def _upload_case_metadata(self, case_metadata: dict):
         """Upload case metadata to Sumo."""
 
-        response = self.sumo_connection.api.save_top_level_json(json=case_metadata)
+        response = self.sumo_connection.api.post(path="/objects", json=case_metadata)
 
         returned_object_id = response.json().get("objectid")
 

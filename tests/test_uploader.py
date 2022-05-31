@@ -64,7 +64,7 @@ def test_case():
 
     # assert that it is not there in the first place
     logger.debug("Asserting that the test case is not already there")
-    search_results = sumo_connection.api.searchroot(query)
+    search_results = sumo_connection.api.get("/searchroot", query=query, size=100, **{'from': 0})
     logger.debug("search results: %s", str(search_results))
     if not search_results:
         raise ValueError("No search results returned")
@@ -76,7 +76,7 @@ def test_case():
 
     # assert that it is there now
     time.sleep(3)  # wait 3 seconds
-    search_results = sumo_connection.api.searchroot(query)
+    search_results = sumo_connection.api.get("/searchroot", query=query, size=100, **{'from': 0})
     hits = search_results.get("hits").get("hits")
     logger.debug(search_results.get("hits"))
     assert len(hits) == 1
@@ -98,7 +98,8 @@ def test_one_file():
 
     e.upload()
     time.sleep(4)
-    search_results = sumo_connection.api.search(query=f"{e.fmu_case_uuid}")
+    query = f"{e.fmu_case_uuid}"
+    search_results = sumo_connection.api.get("/search", query=query, size=100, **{'from': 0})
     total = search_results.get("hits").get("total").get("value")
     assert total == 2
 
@@ -128,7 +129,8 @@ def test_missing_metadata():
             )
 
     # Assert children is on Sumo
-    search_results = sumo_connection.api.search(query=f"{e.fmu_case_uuid}")
+    query = f"{e.fmu_case_uuid}"
+    search_results = sumo_connection.api.get("/search", query=query, size=100, **{'from': 0})
     total = search_results.get("hits").get("total").get("value")
     assert total == 2
 
@@ -151,7 +153,8 @@ def test_wrong_metadata():
     time.sleep(4)
 
     # Assert children is on Sumo
-    search_results = sumo_connection.api.search(query=f"{e.fmu_case_uuid}")
+    query = f"{e.fmu_case_uuid}"
+    search_results = sumo_connection.api.get("/search", query=query, size=100, **{'from': 0})
     total = search_results.get("hits").get("total").get("value")
     assert total == 2
 
@@ -170,7 +173,8 @@ def test_seismic_file():
 
     e.upload()
     time.sleep(4)
-    search_results = sumo_connection.api.search(query=f"{e.fmu_case_uuid}")
+    query = f"{e.fmu_case_uuid}"
+    search_results = sumo_connection.api.get("/search", query=query, size=100, **{'from': 0})
     total = search_results.get("hits").get("total").get("value")
     assert total == 3
 
@@ -186,10 +190,12 @@ def test_teardown():
     # This uploads ensemble metadata to Sumo
     e.register()
 
-    sumo_connection.api.delete_object(e.sumo_parent_id)
+    path = f"/objects('{e.sumo_parent_id}')"
+    sumo_connection.api.delete(path=path)
 
     time.sleep(4)
     # Assert children is not on Sumo
-    search_results = sumo_connection.api.search(query=f"{e.fmu_case_uuid}")
+    query = f"{e.fmu_case_uuid}"
+    search_results = sumo_connection.api.get("/searchroot", query=query, size=100, **{'from': 0})
     total = search_results.get("hits").get("total").get("value")
     assert total == 0
