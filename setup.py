@@ -34,7 +34,8 @@ setup(
         "setuptools",
         "oneseismic",
         "azure-core",
-        "deprecation"
+        "deprecation",
+        "ert>=2.38.0-b5"
     ],
     python_requires=">=3.6",
     packages=find_packages("src"),
