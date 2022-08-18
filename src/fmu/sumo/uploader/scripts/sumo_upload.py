@@ -8,8 +8,15 @@ import argparse
 import logging
 from pathlib import Path
 
-from ert.shared.plugins.plugin_manager import hook_implementation  # type: ignore
-from ert import ErtScript  # type: ignore
+try:
+    from ert_shared.plugins.plugin_manager import hook_implementation  # type: ignore
+except ModuleNotFoundError:
+    from ert.shared.plugins.plugin_manager import hook_implementation  # type: ignore
+
+try:
+    from ert import ErtScript # type: ignore
+except ModuleNotFoundError:
+    from res.job_queue import ErtScript # type: ignore
 
 from fmu.sumo import uploader
 
