@@ -22,7 +22,7 @@ setup(
     author_email="peesv@equinor.com",
     entry_points={
         "ert": [
-            "fmu_sumo_jobs = jobs.hook_implementations.jobs",
+            "fmu_sumo_jobs = fmu.sumo.hook_implementations.jobs",
             "sumo_upload = fmu.sumo.uploader.scripts.sumo_upload",
         ],
         "console_scripts": ["sumo_upload=fmu.sumo.uploader.scripts.sumo_upload:main"],
