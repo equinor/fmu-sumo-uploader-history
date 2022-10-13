@@ -118,9 +118,7 @@ class FileOnDisk:
         if self.byte_string is not None:
             s += f"\n# Byte string length: {len(self.byte_string)}"
 
-        if self.sumo_object_id is None:
-            s += "\n# Not uploaded to Sumo"
-        else:
+        if not self.sumo_object_id is None:
             s += f"\n# Uploaded to Sumo. Sumo_ID: {self.sumo_object_id}"
 
         return s

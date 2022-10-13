@@ -179,7 +179,7 @@ def check_arguments(args) -> None:
     logger.debug("Running check_arguments()")
     logger.debug("Arguments are: %s", str(vars(args)))
 
-    if args.env not in ["dev", "test", "prod", "localhost"]:
+    if args.env not in ["preview", "dev", "test", "prod", "localhost"]:
         warnings.warn(f"Non-standard environment: {args.env}")
 
     if not Path(args.casepath).is_absolute():
