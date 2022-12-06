@@ -137,7 +137,9 @@ class FileOnDisk:
         return response
 
     def _upload_byte_string(self, sumo_connection, object_id, blob_url):
-        response = sumo_connection.api.blob_client.upload_blob(blob=self.byte_string, url=blob_url)
+        response = sumo_connection.api.blob_client.upload_blob(
+            blob=self.byte_string, url=blob_url
+        )
         return response
 
     def _delete_metadata(self, sumo_connection, object_id):

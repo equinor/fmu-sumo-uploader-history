@@ -1,4 +1,4 @@
-"""Objectify an FMU case (results) as it appears on the disk."""
+"""Objectify an FMU case (results), for usage on Radix jobs."""
 
 import os
 import glob
@@ -18,7 +18,10 @@ logger.setLevel(logging.CRITICAL)
 
 # pylint: disable=C0103 # allow non-snake case variable names
 
+
 class CaseOnJob:
+    """Initialize the CaseOnJob object."""
+
     def __init__(self, case_metadata: str, sumo_connection, verbosity="DEBUG"):
         logger.setLevel(level=verbosity)
 
@@ -56,7 +59,9 @@ class CaseOnJob:
         Call sumo, check if the case is already there. Use fmu_case_uuid for this."""
 
         query = f"fmu.case.uuid:{self.fmu_case_uuid}"
-        search_results = self.sumo_connection.api.get("/searchroot", query=query, size=2, **{'from': 0})
+        search_results = self.sumo_connection.api.get(
+            "/searchroot", query=query, size=2, **{"from": 0}
+        )
 
         # To catch crazy rare situation when index is empty (first upload to new index)
         if not search_results.get("hits"):
@@ -204,6 +209,7 @@ class CaseOnJob:
         logger.info("Wall time: %s sec", str(_dt))
 
         return ok_uploads
+
 
 def _calculate_upload_stats(uploads):
     """Calculate upload statistics.

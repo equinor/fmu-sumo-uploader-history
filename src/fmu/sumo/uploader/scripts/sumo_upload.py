@@ -14,9 +14,9 @@ except ModuleNotFoundError:
     from ert_shared.plugins.plugin_manager import hook_implementation  # type: ignore
 
 try:
-    from ert import ErtScript # type: ignore
+    from ert import ErtScript  # type: ignore
 except ModuleNotFoundError:
-    from res.job_queue import ErtScript # type: ignore
+    from res.job_queue import ErtScript  # type: ignore
 
 from fmu.sumo import uploader
 
@@ -48,15 +48,7 @@ It must refer to a valid Sumo environment. Normally this should be set to "prod"
 def main() -> None:
     """Entry point from command line (e.g. ERT FORWARD_JOB)."""
 
-    # Note for further development:
-    # Using subscript/csv_merge.py as inspiration for turning this into something
-    # runable also in ERT workflows. It is likely that some overhead is carried from
-    # the example which may not apply to sumo_upload. The separate main function may
-    # be one such carried feature which in the end does nothing (csv_merge applies
-    # a dedicated argument parser for ERT workflow usage, which may be the reason for
-    # this choice of architecture.)
-
-    parser = get_parser()
+    parser = _get_parser()
     args = parser.parse_args()
 
     if args.verbose:
@@ -68,7 +60,7 @@ def main() -> None:
     args.casepath = os.path.expandvars(args.casepath)
     args.searchpath = os.path.expandvars(args.searchpath)
 
-    check_arguments(args)
+    _check_arguments(args)
 
     sumo_upload_main(
         casepath=args.casepath,
@@ -135,9 +127,9 @@ class SumoUpload(ErtScript):
         """Parse with a simplified command line parser, for ERT only,
         call sumo_upload_main()"""
         logger.debug("Calling run() on SumoUpload")
-        parser = get_parser()
+        parser = _get_parser()
         args = parser.parse_args(args)
-        check_arguments(args)
+        _check_arguments(args)
         sumo_upload_main(
             casepath=args.casepath,
             searchpath=args.searchpath,
@@ -147,7 +139,7 @@ class SumoUpload(ErtScript):
         )
 
 
-def get_parser() -> argparse.ArgumentParser:
+def _get_parser() -> argparse.ArgumentParser:
     """Construct parser object for sumo_upload."""
 
     parser = argparse.ArgumentParser()
@@ -173,7 +165,7 @@ def get_parser() -> argparse.ArgumentParser:
     return parser
 
 
-def check_arguments(args) -> None:
+def _check_arguments(args) -> None:
     """Do sanity check of the input arguments."""
 
     logger.debug("Running check_arguments()")
@@ -198,7 +190,7 @@ def legacy_ertscript_workflow(config):
     """Hook the SumoUpload class into ERT with the name SUMO_UPLOAD,
     and inject documentation"""
     workflow = config.add_workflow(SumoUpload, "SUMO_UPLOAD")
-    workflow.parser = get_parser
+    workflow.parser = _get_parser
     workflow.description = DESCRIPTION
     workflow.examples = EXAMPLES
     workflow.category = "export"
