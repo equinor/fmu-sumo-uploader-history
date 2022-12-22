@@ -71,12 +71,16 @@ def _datetime_now():
 
 
 class FileOnDisk:
-    def __init__(self, path: str, metadata_path=None):
+    def __init__(self, path: str, metadata_path=None, verbosity="INFO"):
         """
         path (str): Path to file
         metadata_path (str): Path to metadata file. If not provided,
                              path will be derived from file path.
         """
+
+        self.verbosity = verbosity
+        logger.setLevel(level=self.verbosity)
+
         self.metadata_path = metadata_path if metadata_path else path_to_yaml_path(path)
         self.path = os.path.abspath(path)
         self.metadata = parse_yaml(self.metadata_path)
@@ -154,7 +158,7 @@ class FileOnDisk:
 
         if not sumo_parent_id:
             raise ValueError(
-                f"Upload failed, sumo_parent_id passed to upload_to_sumo: {sumo_parent_id}"
+                f"Upload failed, missing sumo_parent_id. Got: {sumo_parent_id}"
             )
 
         _t0 = time.perf_counter()
@@ -257,6 +261,7 @@ class FileOnDisk:
                 result["blob_upload_time_start"] = _t0_blob
                 result["blob_upload_time_end"] = _t1_blob
                 result["blob_upload_time_elapsed"] = _t1_blob - _t0_blob
+
             except ResourceExistsError as err:
                 upload_response["status_code"] = 200
                 upload_response["text"] = "File hopefully uploaded to Oneseimic"
@@ -275,16 +280,20 @@ class FileOnDisk:
                 result["status"] = "failed"
                 self._delete_metadata(sumo_connection, self.sumo_object_id)
                 return result
+
             except TransientError as err:
-                logger.debug("Got TransientError. Sleeping for %i seconds", str(i))
+                logger.debug("Got TransientError. Sleeping for %s seconds", str(i))
                 result["status"] = "failed"
+                result["blob_upload_response_status_code"] = err.code
                 time.sleep(i)
                 continue
+
             except AuthenticationError as err:
                 logger.debug("Upload failed: %s", upload_response["text"])
                 result["status"] = "rejected"
                 self._delete_metadata(sumo_connection, self.sumo_object_id)
                 return result
+
             except PermanentError as err:
                 logger.debug("Upload failed: %s", upload_response["text"])
                 result["status"] = "rejected"
@@ -293,10 +302,13 @@ class FileOnDisk:
 
             break
 
-        if upload_response["status_code"] not in [200, 201]:
+        if "status_code" not in upload_response or upload_response[
+            "status_code"
+        ] not in [200, 201]:
             logger.debug("Upload failed: %s", upload_response["text"])
             result["status"] = "failed"
             self._delete_metadata(sumo_connection, self.sumo_object_id)
         else:
             result["status"] = "ok"
+
         return result

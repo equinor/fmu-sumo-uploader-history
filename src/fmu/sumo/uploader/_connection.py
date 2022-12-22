@@ -7,9 +7,10 @@ from sumo.wrapper import SumoClient
 class SumoConnection:
     """Object to hold authentication towards Sumo"""
 
-    def __init__(self, env=None):
+    def __init__(self, env=None, token=None):
         self._api = None
         self._env = env
+        self.token = token
 
         info = "Connection to Sumo on environment: {}".format(self.env)
         logging.info(info)
@@ -34,7 +35,8 @@ class SumoConnection:
 
     def _establish_connection(self):
         """Establish the connection with Sumo API, take user through 2FA."""
-        return SumoClient(env=self.env)
+        return SumoClient(env=self.env, token=self.token)
+
 
 class SumoConnectionWithOutsideToken:
     """Object to hold authentication towards Sumo with outside access token"""
