@@ -154,9 +154,9 @@ class CaseOnDisk:
                     pass  # Not a valid uuid, will call Sumo
 
         # No valid cached file, need to call Sumo to get the parent id
-        query = f"fmu.case.uuid:{self.fmu_case_uuid}"
+        query = f"class:case AND fmu.case.uuid:{self.fmu_case_uuid}"
         search_results = self.sumo_connection.api.get(
-            "/searchroot", query=query, size=2, **{"from": 0}
+            "/search", query=query, size=2, **{"from": 0}
         )
 
         # To catch crazy rare situation when index is empty (first upload to new index)

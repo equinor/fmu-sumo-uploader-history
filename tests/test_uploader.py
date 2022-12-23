@@ -84,12 +84,12 @@ def test_case(token):
         sumo_connection=sumo_connection,
     )
 
-    query = f"fmu.case.uuid:{e.fmu_case_uuid}"
+    query = f"class:case AND fmu.case.uuid:{e.fmu_case_uuid}"
 
     # assert that it is not there in the first place
     logger.debug("Asserting that the test case is not already there")
     search_results = sumo_connection.api.get(
-        "/searchroot", query=query, size=100, **{"from": 0}
+        "/search", query=query, size=100, **{"from": 0}
     )
     logger.debug("search results: %s", str(search_results))
     if not search_results:
@@ -103,7 +103,7 @@ def test_case(token):
     # assert that it is there now
     time.sleep(3)  # wait 3 seconds
     search_results = sumo_connection.api.get(
-        "/searchroot", query=query, size=100, **{"from": 0}
+        "/search", query=query, size=100, **{"from": 0}
     )
     hits = search_results.get("hits").get("hits")
     logger.debug(search_results.get("hits"))
@@ -246,9 +246,9 @@ def test_teardown(token):
     time.sleep(30)  # Sumo removes the container
 
     # Assert children is not on Sumo
-    query = f"{e.fmu_case_uuid}"
+    query = f"class:case AND {e.fmu_case_uuid}"
     search_results = sumo_connection.api.get(
-        "/searchroot", query=query, size=100, **{"from": 0}
+        "/search", query=query, size=100, **{"from": 0}
     )
     total = search_results["hits"]["total"]["value"]
     assert total == 0
