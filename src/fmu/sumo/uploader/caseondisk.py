@@ -140,8 +140,8 @@ class CaseOnDisk:
             file_age = datetime.datetime.today() - datetime.datetime.fromtimestamp(
                 cached_file.lstat().st_mtime
             )
-            if file_age.days < 14:
-                logger.debug("cached sumo_parent_id is less than 14 days, using it.")
+            if file_age.days < 1:
+                logger.debug("cached sumo_parent_id is less than 1 days, using it.")
                 with open(str(cached_file), "r") as infile:
                     filecontents = yaml.safe_load(infile)
                 sumo_parent_id = filecontents.get(cached_key)
