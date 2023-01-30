@@ -12,10 +12,6 @@ import time
 import logging
 import hashlib
 import base64
-import tempfile
-import json
-import oneseismic.scan.__main__ as scan
-import oneseismic.upload.__main__ as upload
 
 import yaml
 
@@ -97,20 +93,12 @@ class FileOnDisk:
 
         self.metadata["_sumo"] = {}
 
-        # if self.metadata["class"] == "seismic":
-        if self.metadata["data"]["format"] == "segy":
-            self.metadata["_sumo"]["blob_size"] = 0
-            self.manifest = json.loads(scan.main([self.path]))
-            self.metadata["_sumo"]["blob_sha256"] = self.manifest["guid"]
-            self.byte_string = None
-
-        else:
-            self.byte_string = file_to_byte_string(path)
-            self.metadata["_sumo"]["blob_size"] = len(self.byte_string)
-            digester = hashlib.md5(self.byte_string)
-            self.metadata["_sumo"]["blob_md5"] = base64.b64encode(
-                digester.digest()
-            ).decode("utf-8")
+        self.byte_string = file_to_byte_string(path)
+        self.metadata["_sumo"]["blob_size"] = len(self.byte_string)
+        digester = hashlib.md5(self.byte_string)
+        self.metadata["_sumo"]["blob_md5"] = base64.b64encode(
+            digester.digest()
+        ).decode("utf-8")
 
     def __repr__(self):
         if not self.metadata:
@@ -227,30 +215,13 @@ class FileOnDisk:
         for i in backoff:
             logger.debug("backoff in inner loop is %s", str(i))
             try:
-                # if self.metadata["class"] == "seismic":
-                if self.metadata["data"]["format"] == "segy":
-                    with tempfile.NamedTemporaryFile(mode="w+") as temp:
-                        json.dump(self.manifest, temp)
-                        temp.flush()
-                        args = [
-                            "--output-auth-method",
-                            "connection-string",
-                            "--output-connection-string",
-                            "BlobEndpoint=" + response.json()["blob_url"],
-                            temp.name,
-                            self.path,
-                        ]
-                        upload.main(args)
-                    upload_response["status_code"] = 200
-                    upload_response["text"] = "File hopefully uploaded to Oneseimic"
-                else:
-                    response = self._upload_byte_string(
-                        sumo_connection=sumo_connection,
-                        object_id=self.sumo_object_id,
-                        blob_url=blob_url,
-                    )
-                    upload_response["status_code"] = response.status_code
-                    upload_response["text"] = response.text
+                response = self._upload_byte_string(
+                    sumo_connection=sumo_connection,
+                    object_id=self.sumo_object_id,
+                    blob_url=blob_url,
+                )
+                upload_response["status_code"] = response.status_code
+                upload_response["text"] = response.text
 
                 _t1_blob = time.perf_counter()
 
@@ -264,7 +235,7 @@ class FileOnDisk:
 
             except ResourceExistsError as err:
                 upload_response["status_code"] = 200
-                upload_response["text"] = "File hopefully uploaded to Oneseimic"
+                upload_response["text"] = "File hopefully uploaded"
                 _t1_blob = time.perf_counter()
 
                 result["blob_upload_response_status_code"] = upload_response[

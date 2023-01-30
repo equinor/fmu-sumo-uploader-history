@@ -4,7 +4,6 @@ pytest>=6.1.1
 deprecation
 sumo-wrapper-python @ git+https://github.com/equinor/sumo-wrapper-python.git@master#egg=sumo-wrapper-python
 xtgeo
-oneseismic
 azure-core
 pyarrow; python_version > "3.6.1"
 # ert
