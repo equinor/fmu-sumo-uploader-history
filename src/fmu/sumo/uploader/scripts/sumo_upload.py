@@ -78,42 +78,43 @@ def sumo_upload_main(
 
     logger.debug("Running fmu_uploader_main()")
 
-    # establish the connection to Sumo
-    sumo_connection = uploader.SumoConnection(env=env)
-    logger.info("Connection to Sumo established")
-
-    # initiate the case on disk object
-    logger.info("Case-relative metadata path is %s", metadata_path)
-    case_metadata_path = Path(casepath) / Path(metadata_path)
-    logger.info("case_metadata_path is %s", case_metadata_path)
-
     # Catch-all to ensure FMU workflow keeps running even if something happens.
     # This should be a temporary solution to be re-evaluated in the future.
 
     try:
+        # establish the connection to Sumo
+        sumo_connection = uploader.SumoConnection(env=env)
+        logger.info("Connection to Sumo established")
+
+        # initiate the case on disk object
+        logger.info("Case-relative metadata path is %s", metadata_path)
+        case_metadata_path = Path(casepath) / Path(metadata_path)
+        logger.info("case_metadata_path is %s", case_metadata_path)
+
         e = uploader.CaseOnDisk(
             case_metadata_path=case_metadata_path, sumo_connection=sumo_connection
         )
+        # add files to the case on disk object
+        logger.info("Adding files. Search path is %s", searchpath)
+        e.add_files(searchpath)
+        logger.info("%s files has been added", str(len(e.files)))
+
+        if len(e.files) == 0:
+            logger.debug("There are 0 (zero) files.")
+            warnings.warn("No files found - aborting ")
+            return
+
+        # upload the indexed files
+        logger.info("Starting upload")
+        e.upload(threads=threads, register_case=False)
+        logger.info("Upload done")
     except Exception as err:
         logger.info(
-            "Encountered a problem connecting to Sumo. " "The error was: " f"{err}"
+            "Problem related to Sumo upload: "  f"{err}"
         )
+        warnings.warn(
+            "Problem related to Sumo upload: " f"{err}")
         return
-
-    # add files to the case on disk object
-    logger.info("Adding files. Search path is %s", searchpath)
-    e.add_files(searchpath)
-    logger.info("%s files has been added", str(len(e.files)))
-
-    if len(e.files) == 0:
-        logger.debug("There are 0 (zero) files.")
-        warnings.warn("No files found - aborting ")
-        return
-
-    # upload the indexed files
-    logger.info("Starting upload")
-    e.upload(threads=threads, register_case=False)
-    logger.info("Upload done")
 
 
 class SumoUpload(ErtScript):
