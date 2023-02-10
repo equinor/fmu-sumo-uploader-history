@@ -1,6 +1,5 @@
 import logging
 
-from sumo.wrapper import CallSumoApi
 from sumo.wrapper import SumoClient
 
 
