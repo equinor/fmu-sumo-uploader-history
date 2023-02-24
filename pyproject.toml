@@ -10,4 +10,4 @@ requires = [
 ]
 
 [tool.black]
-line-length = 80
+line-length = 79

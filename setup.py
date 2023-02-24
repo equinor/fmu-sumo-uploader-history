@@ -4,6 +4,7 @@
 from setuptools import setup, find_packages
 from urllib.parse import urlparse
 from pip._internal.req import parse_requirements as parse
+import os
 
 
 def _format_requirement(req):
@@ -32,7 +33,11 @@ except ImportError:
     # sphinx not installed - do not provide build_sphinx cmd
     pass
 
-REQUIREMENTS = parse_requirements("requirements/requirements.txt")
+is_docs = os.getenv("READTHEDOCS") == "True"
+
+REQUIREMENTS = (
+    [] if is_docs else parse_requirements("requirements/requirements.txt")
+)
 TEST_REQUIREMENTS = parse_requirements("requirements/requirements_test.txt")
 DOCS_REQUIREMENTS = parse_requirements("requirements/requirements_docs.txt")
 SETUP_REQUIREMENTS = parse_requirements("requirements/requirements_setup.txt")
@@ -60,7 +65,9 @@ setup(
             "fmu_sumo_jobs = fmu.sumo.hook_implementations.jobs",
             "sumo_upload = fmu.sumo.uploader.scripts.sumo_upload",
         ],
-        "console_scripts": ["sumo_upload=fmu.sumo.uploader.scripts.sumo_upload:main"],
+        "console_scripts": [
+            "sumo_upload=fmu.sumo.uploader.scripts.sumo_upload:main"
+        ],
     },
     cmdclass=CMDCLASS,
     install_requires=REQUIREMENTS,
