@@ -29,8 +29,8 @@ fmu:
         reference: rms/structural_model
 
     case:
-        name: TestCase from fmu.sumo
-        uuid: 8bb56d60-8758-481a-89a4-6bac8561d38e # (pseudo-)random valid uuid4
+        name: TestCase from fmu.sumo with segy and openvds
+        uuid: 8bb56d60-2222-5555-7547-6bac8561d38e # (pseudo-)random valid uuid4
         user:
             id: testuser # $USER from ERT
         description:

@@ -159,7 +159,7 @@ class FileOnJob:
                 result["blob_upload_response_status_code"] = upload_response[
                     "status_code"
                 ]
-                result["blob_upload_response_text"] = upload_response["text"]
+                result["blob_upload_response_status_text"] = upload_response["text"]
                 result["blob_upload_time_start"] = _t0_blob
                 result["blob_upload_time_end"] = _t1_blob
                 result["blob_upload_time_elapsed"] = _t1_blob - _t0_blob
@@ -171,7 +171,7 @@ class FileOnJob:
                 result["blob_upload_response_status_code"] = upload_response[
                     "status_code"
                 ]
-                result["blob_upload_response_text"] = upload_response["text"]
+                result["blob_upload_response_status_text"] = upload_response["text"]
                 result["blob_upload_time_start"] = _t0_blob
                 result["blob_upload_time_end"] = _t1_blob
                 result["blob_upload_time_elapsed"] = _t1_blob - _t0_blob

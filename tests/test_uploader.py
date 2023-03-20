@@ -4,8 +4,13 @@ import pytest
 import time
 from pathlib import Path
 import logging
+import subprocess
+import json
 
 from fmu.sumo import uploader
+
+if not sys.platform.startswith('darwin'):
+    import openvds
 
 # run the tests from the root dir
 TEST_DIR = Path(__file__).parent / "../"
@@ -200,6 +205,85 @@ def test_wrong_metadata(token):
     assert total == 2
 
 
+@pytest.mark.skipif(sys.platform.startswith('darwin'), reason="do not run OpenVDS SEGYImport on mac os")
+def test_openvds_available(token):
+    python_path = os.path.dirname(sys.executable)
+    logger.info(python_path)
+    path_to_SEGYImport = os.path.join(python_path, '..', 'bin', 'SEGYImport')
+    logger.info(path_to_SEGYImport)
+    check_SEGYImport_version = subprocess.run([path_to_SEGYImport, '--version'], 
+                                            capture_output=True, text=True)
+    assert check_SEGYImport_version.returncode == 0
+    assert "SEGYImport" in check_SEGYImport_version.stdout
+
+
+@pytest.mark.skipif(sys.platform.startswith('darwin'), reason="do not run OpenVDS SEGYImport on mac os")
+def test_seismic_openvds_file(token):
+    """Upload seimic in OpenVDS format to Sumo. Assert that it is there."""
+    sumo_connection = uploader.SumoConnection(env=ENV, token=token)
+    e = uploader.CaseOnDisk(
+        case_metadata_path="tests/data/test_case_080/case_segy.yml",
+        sumo_connection=sumo_connection,
+    )
+    segy_filepath = "tests/data/test_case_080/seismic.segy"
+    e.register()
+    e.add_files(segy_filepath)
+    e.upload()
+
+    time.sleep(4)
+
+    query = f"_sumo.parent_object: {e.fmu_case_uuid}"
+    search_results = sumo_connection.api.get(
+        "/search", query=query, size=100, **{"from": 0}
+    )
+    total = search_results.get("hits").get("total").get("value")
+    assert total == 1
+
+    assert search_results.get("hits").get("hits")[0].get("_source").get("data").get("format") == "openvds"
+    assert search_results.get("hits").get("hits")[0].get("_source").get("file").get("checksum_md5") == ""
+
+    # Get SAS token to read from az blob store
+    child_id = search_results.get("hits").get("hits")[0].get("_id")
+    method = f"/objects('{child_id}')/blob/authuri"
+    token_results = sumo_connection.api.get(method)
+    url = '"azureSAS:' + json.loads(token_results.decode("utf-8")).get("baseuri")[6:] + child_id + '"'
+    url_conn = '"Suffix=?' + json.loads(token_results.decode("utf-8")).get("auth") + '"'
+
+    # Export from az blob store to a segy file on local disk
+    exported_filepath = "exported.segy"
+    if os.path.exists(exported_filepath):
+        os.remove(exported_filepath)
+    python_path = os.path.dirname(sys.executable)
+    path_to_SEGYExport = os.path.join(python_path, '..', 'bin', 'SEGYExport')
+    cmdstr = ' '.join([path_to_SEGYExport, 
+        '--url', url,
+        '--connection', url_conn,
+        'exported.segy'])
+    cmd_result = subprocess.run(cmdstr, 
+        capture_output=True, text=True, shell=True)
+    assert cmd_result.returncode == 0
+    assert os.path.isfile(exported_filepath)
+    assert os.stat(exported_filepath).st_size == os.stat(segy_filepath).st_size
+    if os.path.exists(exported_filepath):
+        os.remove(exported_filepath)
+
+    # Use OpenVDS Python API to read directly from az cloud storage
+    handle = openvds.open(url[1:-1], url_conn[1:-1])
+    layout = openvds.getLayout(handle)
+    channel_count = layout.getChannelCount()
+    assert channel_count == 3
+    assert layout.getChannelName(0) == "Amplitude"
+
+    # Delete this case
+    path = f"/objects('{e.fmu_case_uuid}')"
+    sumo_connection.api.delete(path=path)
+    time.sleep(30)  # Sumo removes the container
+
+    # OpenVDS reads should fail after deletion
+    with pytest.raises(RuntimeError, match="Error on downloading*"):
+        handle = openvds.open(url[1:-1], url_conn[1:-1])
+
+            
 def test_teardown(token):
     """Teardown all testdata"""
     sumo_connection = uploader.SumoConnection(env=ENV, token=token)

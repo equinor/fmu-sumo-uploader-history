@@ -9,10 +9,11 @@
 import os
 import datetime
 import time
+import sys
+import subprocess
 import logging
 import hashlib
 import base64
-
 import yaml
 
 from sumo.wrapper._request_error import (
@@ -66,6 +67,26 @@ def _datetime_now():
     return datetime.datetime.now().isoformat()
 
 
+def _get_segyimport_cmdstr(blob_url, object_id, file_path, sample_unit):
+    """Return the command string for running OpenVDS SEGYImport"""
+    url = '"azureSAS:' + blob_url["baseuri"][6:] + '"'  
+    url_conn = '"Suffix=?' + blob_url["auth"] + '"'
+    persistent_id = '"' + object_id + '"'
+
+    pythonPath = os.path.dirname(sys.executable)
+    path_to_SEGYImport = os.path.join(pythonPath, '..', 'bin', 'SEGYImport') 
+
+    cmdstr = ' '.join([path_to_SEGYImport, 
+        '--compression-method', 'RLE',
+        '--brick-size', '64', 
+        '--sample-unit', sample_unit, 
+        '--url', url,
+        '--url-connection', url_conn, 
+        '--persistentID', persistent_id,
+        file_path])
+    return cmdstr
+
+
 class FileOnDisk:
     def __init__(self, path: str, metadata_path=None, verbosity="INFO"):
         """
@@ -93,12 +114,16 @@ class FileOnDisk:
 
         self.metadata["_sumo"] = {}
 
-        self.byte_string = file_to_byte_string(path)
-        self.metadata["_sumo"]["blob_size"] = len(self.byte_string)
-        digester = hashlib.md5(self.byte_string)
-        self.metadata["_sumo"]["blob_md5"] = base64.b64encode(
-            digester.digest()
-        ).decode("utf-8")
+        if self.metadata["data"]["format"] in ["openvds", "segy"]:
+            self.metadata["_sumo"]["blob_size"] = 0
+            self.byte_string = None
+        else:
+            self.byte_string = file_to_byte_string(path)
+            self.metadata["_sumo"]["blob_size"] = len(self.byte_string)
+            digester = hashlib.md5(self.byte_string)
+            self.metadata["_sumo"]["blob_md5"] = base64.b64encode(
+                digester.digest()
+            ).decode("utf-8")
 
     def __repr__(self):
         if not self.metadata:
@@ -165,6 +190,11 @@ class FileOnDisk:
                 result["blob_file_path"] = self.path
                 result["blob_file_size"] = self.size
 
+                # Uploader converts segy-files to OpenVDS:
+                if self.metadata["data"]["format"] in ["openvds", "segy"]:
+                    self.metadata["data"]["format"] = "openvds"
+                    self.metadata["file"]["checksum_md5"] = ""
+
                 response = self._upload_metadata(
                     sumo_connection=sumo_connection, sumo_parent_id=sumo_parent_id
                 )
@@ -215,20 +245,42 @@ class FileOnDisk:
         for i in backoff:
             logger.debug("backoff in inner loop is %s", str(i))
             try:
-                response = self._upload_byte_string(
-                    sumo_connection=sumo_connection,
-                    object_id=self.sumo_object_id,
-                    blob_url=blob_url,
-                )
-                upload_response["status_code"] = response.status_code
-                upload_response["text"] = response.text
+                if self.metadata["data"]["format"] in ["openvds", "segy"]:
+                    if sys.platform.startswith('darwin'):  
+                        # OpenVDS does not support Mac/darwin directly
+                        # Outer code expects and interprets http error codes
+                        upload_response["status_code"] = 418  
+                        upload_response["text"] = "Can not perform SEGY upload since OpenVDS does not support Mac" 
+                    else:
+                        if self.metadata["data"]["vertical_domain"] == 'depth':
+                            sample_unit = 'm'   
+                        else:
+                            sample_unit = 'ms'  # aka time domain
+                        cmd_str = _get_segyimport_cmdstr(blob_url, self.sumo_object_id, self.path, sample_unit)
+                        cmd_result = subprocess.run(cmd_str, 
+                                capture_output=True, text=True, shell=True)
+                        if cmd_result.returncode == 0:
+                            upload_response["status_code"] = 200
+                            upload_response["text"] = "SEGY uploaded as OpenVDS."
+                        else:
+                            # Outer code expects and interprets http error codes
+                            upload_response["status_code"] = 418  
+                            upload_response["text"] = "FAILED SEGY upload as OpenVDS. " + cmd_result.stderr
+                else:                
+                    response = self._upload_byte_string(
+                        sumo_connection=sumo_connection,
+                        object_id=self.sumo_object_id,
+                        blob_url=blob_url,
+                    )
+                    upload_response["status_code"] = response.status_code
+                    upload_response["text"] = response.text
 
                 _t1_blob = time.perf_counter()
 
                 result["blob_upload_response_status_code"] = upload_response[
                     "status_code"
                 ]
-                result["blob_upload_response_text"] = upload_response["text"]
+                result["blob_upload_response_status_text"] = upload_response["text"]
                 result["blob_upload_time_start"] = _t0_blob
                 result["blob_upload_time_end"] = _t1_blob
                 result["blob_upload_time_elapsed"] = _t1_blob - _t0_blob
@@ -241,7 +293,7 @@ class FileOnDisk:
                 result["blob_upload_response_status_code"] = upload_response[
                     "status_code"
                 ]
-                result["blob_upload_response_text"] = upload_response["text"]
+                result["blob_upload_response_status_text"] = upload_response["text"]
                 result["blob_upload_time_start"] = _t0_blob
                 result["blob_upload_time_end"] = _t1_blob
                 result["blob_upload_time_elapsed"] = _t1_blob - _t0_blob
