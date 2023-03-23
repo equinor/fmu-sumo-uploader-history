@@ -14,6 +14,11 @@ except ModuleNotFoundError:
     from ert_shared.plugins.plugin_manager import hook_implementation  # type: ignore
 
 try:
+    from ert.shared.plugins.plugin_response import plugin_response  # type: ignore
+except ModuleNotFoundError:
+    from ert_shared.plugins.plugin_response import plugin_response  # type: ignore
+
+try:
     from ert import ErtScript  # type: ignore
 except ModuleNotFoundError:
     from res.job_queue import ErtScript  # type: ignore
