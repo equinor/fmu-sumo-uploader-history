@@ -24,25 +24,23 @@ logger = logging.getLogger(__name__)
 logger.setLevel(logging.CRITICAL)
 
 # This documentation is for sumo_uploader as an ERT workflow
-DESCRIPTION = """
-SUMO_UPLOAD will upload files to Sumo. The typical use case is as add-on to 
+DESCRIPTION = """SUMO_UPLOAD will upload files to Sumo. The typical use case is as add-on to 
 post-processing workflows which aggregate data across an ensemble and stores the
 results outside the realization folders.
 
 SUMO_UPLOAD is implemented both as FORWARD_JOB and WORKFLOW_JOB and can be called from 
-both contexts when running ERT.
-"""
+both contexts when running ERT."""
 
-EXAMPLES = """
-In an existing workflow e.g. ``ert/bin/workflows/MY_WORKFLOW`` with the contents::
-  MY_JOB <arguments>
-  SUMO_UPLOAD <CASEPATH> <CASEPATH>/MyIteration/share/results/tables/*.csv <SUMO_ENV>
-...where ``MY_JOB`` typically refers to a post-processing job creating data.
-...and where <CASEPATH> typically refers to <SCRATCH>/<USER>/<CASE>
+EXAMPLES = """In an existing workflow e.g. ert/bin/workflows/MY_WORKFLOW with the contents 
+
+MY_JOB <arguments>
+SUMO_UPLOAD <CASEPATH> <CASEPATH>/MyIteration/share/results/tables/*.csv <SUMO_ENV>
+
+where ``MY_JOB`` typically refers to a post-processing job creating data 
+and where <CASEPATH> typically refers to <SCRATCH>/<USER>/<CASE>
 
 <SUMO_ENV> is typically set in the config as it is used also by forward jobs.
-It must refer to a valid Sumo environment. Normally this should be set to "prod".
-"""  # noqa
+It must refer to a valid Sumo environment. Normally this should be set to prod.""" 
 
 
 def main() -> None:
@@ -198,6 +196,7 @@ def legacy_ertscript_workflow(config):
 
 
 @hook_implementation
+@plugin_response(plugin_name="SUMO_UPLOAD")
 def job_documentation(job_name):
     if job_name != "SUMO_UPLOAD":
         return None
