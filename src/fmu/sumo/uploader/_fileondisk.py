@@ -73,11 +73,12 @@ def _get_segyimport_cmdstr(blob_url, object_id, file_path, sample_unit):
     url_conn = '"Suffix=?' + blob_url["auth"] + '"'
     persistent_id = '"' + object_id + '"'
 
-    pythonPath = os.path.dirname(sys.executable)
-    path_to_SEGYImport = os.path.join(pythonPath, '..', 'bin', 'SEGYImport') 
+    python_path = os.path.dirname(sys.executable)
+    path_to_SEGYImport = os.path.join(python_path, '..', 'bin', 'SEGYImport') 
+    if sys.platform.startswith("win"):
+        path_to_SEGYImport = path_to_SEGYImport + ".exe"
     if not os.path.isfile(path_to_SEGYImport):
         path_to_SEGYImport = os.path.join(python_path, '..', 'shims', 'SEGYImport')
-
 
     cmdstr = ' '.join([path_to_SEGYImport, 
         '--compression-method', 'RLE',

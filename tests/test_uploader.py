@@ -210,6 +210,8 @@ def test_openvds_available(token):
     python_path = os.path.dirname(sys.executable)
     logger.info(python_path)
     path_to_SEGYImport = os.path.join(python_path, '..', 'bin', 'SEGYImport')
+    if sys.platform.startswith("win"):
+        path_to_SEGYImport = path_to_SEGYImport + ".exe"
     if not os.path.isfile(path_to_SEGYImport):
         path_to_SEGYImport = os.path.join(python_path, '..', 'shims', 'SEGYImport')
 
