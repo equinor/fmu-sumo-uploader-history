@@ -260,6 +260,10 @@ def test_seismic_openvds_file(token):
         os.remove(exported_filepath)
     python_path = os.path.dirname(sys.executable)
     path_to_SEGYExport = os.path.join(python_path, '..', 'bin', 'SEGYExport')
+    if sys.platform.startswith("win"):
+        path_to_SEGYExport = path_to_SEGYExport + ".exe"
+    if not os.path.isfile(path_to_SEGYExport):
+        path_to_SEGYExport = os.path.join(python_path, '..', 'shims', 'SEGYExport')
     cmdstr = ' '.join([path_to_SEGYExport, 
         '--url', url,
         '--connection', url_conn,
