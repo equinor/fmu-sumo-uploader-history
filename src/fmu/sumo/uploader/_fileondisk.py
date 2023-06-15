@@ -69,8 +69,13 @@ def _datetime_now():
 
 def _get_segyimport_cmdstr(blob_url, object_id, file_path, sample_unit):
     """Return the command string for running OpenVDS SEGYImport"""
-    url = '"azureSAS' + blob_url.split(object_id)[0][5:] + '"'  # SEGYImport expects url to container
-    url_conn = '"Suffix=?' + blob_url.split("?")[1] + '"'
+    try: 
+        url = '"azureSAS:' + blob_url["baseuri"][6:] + '"'  
+        url_conn = '"Suffix=?' + blob_url["auth"] + '"'
+    except:
+        url = '"azureSAS' + blob_url.split(object_id)[0][5:] + '"'  # SEGYImport expects url to container
+        url_conn = '"Suffix=?' + blob_url.split("?")[1] + '"'
+
     persistent_id = '"' + object_id + '"'
 
     python_path = os.path.dirname(sys.executable)

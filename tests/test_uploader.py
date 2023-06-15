@@ -250,9 +250,14 @@ def test_seismic_openvds_file(token):
     # Get SAS token to read from az blob store
     child_id = search_results.get("hits").get("hits")[0].get("_id")
     method = f"/objects('{child_id}')/blob/authuri"
-    token_results = sumo_connection.api.get(method).decode("utf-8")
-    url = '"azureSAS' + token_results.split("?")[0][5:] + '/"'
-    url_conn = '"Suffix=?' + token_results.split("?")[1] + '"'
+    token_results = sumo_connection.api.get(method)
+    try:
+        url = '"azureSAS:' + json.loads(token_results.decode("utf-8")).get("baseuri")[6:] + child_id + '"'
+        url_conn = '"Suffix=?' + json.loads(token_results.decode("utf-8")).get("auth") + '"'
+    except:
+        token_results = token_results.decode("utf-8")
+        url = '"azureSAS' + token_results.split("?")[0][5:] + '/"'
+        url_conn = '"Suffix=?' + token_results.split("?")[1] + '"'
 
     # Export from az blob store to a segy file on local disk
     exported_filepath = "exported.segy"
