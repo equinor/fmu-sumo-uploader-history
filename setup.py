@@ -1,10 +1,12 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
-from setuptools import setup, find_packages
-from urllib.parse import urlparse
-from pip._internal.req import parse_requirements as parse
 import os
+import pathlib
+from urllib.parse import urlparse
+
+from pip._internal.req import parse_requirements as parse
+from setuptools import find_packages, setup
 
 
 def _format_requirement(req):
@@ -29,7 +31,7 @@ try:
     from sphinx.setup_command import BuildDoc
 
     CMDCLASS.update({"build_sphinx": BuildDoc})
-except ImportError:
+except ImportError as e:
     # sphinx not installed - do not provide build_sphinx cmd
     pass
 
@@ -46,6 +48,8 @@ EXTRAS_REQUIRE = {"tests": TEST_REQUIREMENTS, "docs": DOCS_REQUIREMENTS}
 setup(
     name="fmu-sumo",
     description="Python package for interacting with Sumo in an FMU setting",
+    long_description=pathlib.Path("README.md").read_text(),
+    long_description_content_type="text/markdown",
     url="https://github.com/equinor/fmu-sumo",
     use_scm_version={"write_to": "src/fmu/sumo/version.py"},
     author="Equinor",
@@ -59,7 +63,6 @@ setup(
         "Programming Language :: Python :: 3.7",
         "Programming Language :: Python :: 3.8",
     ],
-    author_email="Equinor ASA",
     entry_points={
         "ert": [
             "fmu_sumo_jobs = fmu.sumo.hook_implementations.jobs",
