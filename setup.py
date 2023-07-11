@@ -31,7 +31,7 @@ try:
     from sphinx.setup_command import BuildDoc
 
     CMDCLASS.update({"build_sphinx": BuildDoc})
-except ImportError as e:
+except ImportError:
     # sphinx not installed - do not provide build_sphinx cmd
     pass
 
