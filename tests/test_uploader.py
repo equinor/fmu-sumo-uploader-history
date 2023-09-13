@@ -203,7 +203,7 @@ def test_wrong_metadata(token):
     )
     total = search_results.get("hits").get("total").get("value")
     assert total == 2
-
+    
 
 @pytest.mark.skipif(sys.platform.startswith('darwin'), reason="do not run OpenVDS SEGYImport on mac os")
 def test_openvds_available(token):

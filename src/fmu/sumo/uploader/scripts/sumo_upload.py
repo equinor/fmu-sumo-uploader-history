@@ -110,6 +110,7 @@ def sumo_upload_main(
         # upload the indexed files
         logger.info("Starting upload")
         e.upload(threads=threads, register_case=False)
+        e.upload_parameters_txt()
         logger.info("Upload done")
     except Exception as err:
         logger.info(

@@ -10,10 +10,16 @@ import warnings
 import datetime
 
 import yaml
+import json
 import pandas as pd
+import hashlib
+import base64
 
 from fmu.sumo.uploader._fileondisk import FileOnDisk
 from fmu.sumo.uploader._upload_files import upload_files
+from fmu.dataio import ExportData
+from fmu.dataio._utils import read_parameters_txt
+
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.CRITICAL)
@@ -60,7 +66,9 @@ class CaseOnDisk:
 
     """
 
-    def __init__(self, case_metadata_path: str, sumo_connection, verbosity="INFO"):
+    def __init__(
+        self, case_metadata_path: str, sumo_connection, verbosity="INFO"
+    ):
         """Initialize CaseOnDisk.
 
         Args:
@@ -135,17 +143,24 @@ class CaseOnDisk:
 
         # If a relatively new cached file exists we use that and avoid calling Sumo
         cached_key = "sumo-case-id"
-        cached_file = Path(self._case_metadata_path.parent / "sumo_parent_id.yml")
+        cached_file = Path(
+            self._case_metadata_path.parent / "sumo_parent_id.yml"
+        )
         if cached_file.exists():
-            file_age = datetime.datetime.today() - datetime.datetime.fromtimestamp(
-                cached_file.lstat().st_mtime
+            file_age = (
+                datetime.datetime.today()
+                - datetime.datetime.fromtimestamp(cached_file.lstat().st_mtime)
             )
             if file_age.days < 1:
-                logger.debug("cached sumo_parent_id is less than 1 days, using it.")
+                logger.debug(
+                    "cached sumo_parent_id is less than 1 days, using it."
+                )
                 with open(str(cached_file), "r") as infile:
                     filecontents = yaml.safe_load(infile)
                 sumo_parent_id = filecontents.get(cached_key)
-                logger.debug("Got sumo_parent_id from cache: %s", sumo_parent_id)
+                logger.debug(
+                    "Got sumo_parent_id from cache: %s", sumo_parent_id
+                )
                 try:
                     test_uuid = uuid.UUID(sumo_parent_id)
                     logger.debug("Getting sumo parent id from cached file")
@@ -209,7 +224,9 @@ class CaseOnDisk:
     def _upload_case_metadata(self, case_metadata: dict):
         """Upload case metadata to Sumo."""
 
-        response = self.sumo_connection.api.post(path="/objects", json=case_metadata)
+        response = self.sumo_connection.api.post(
+            path="/objects", json=case_metadata
+        )
 
         returned_object_id = response.json().get("objectid")
 
@@ -224,6 +241,44 @@ class CaseOnDisk:
             raise ValueError("Could not get fmu_case_uuid from case metadata")
 
         return fmu_case_uuid
+
+    def upload_parameters_txt(
+        self,
+        glob_var_path: str = "./fmuconfig/output/global_variables.yml",
+        parameters_path: str = "./parameters.txt",
+    ):
+        """Upload parameters.txt if it is not present in Sumo for the current realization"""
+        logger.info("Uploading parameters.txt")
+
+        fmu_id = self.fmu_case_uuid
+        realization_id = self.files[0].metadata["fmu"]["realization"]["uuid"]
+        query = f"fmu.case.uuid:{fmu_id} AND fmu.realization.uuid:{realization_id} AND data.content:parameters"
+        search_res = self.sumo_connection.api.get("/search", query=query)
+
+        if search_res["hits"]["total"]["value"] == 0:
+            with open(glob_var_path, "r") as variables_yml:
+                global_config = yaml.safe_load(variables_yml)
+
+            parameters = read_parameters_txt(parameters_path)
+
+            exd = ExportData(
+                config=global_config, content="parameters", name="parameters"
+            )
+            metadata = exd.generate_metadata(parameters)
+
+            bytes = json.dumps(parameters).encode("utf-8")
+            digester = hashlib.md5(bytes)
+            md5 = base64.b64encode(digester.digest()).decode("utf-8")
+            metadata["_sumo"] = {"blob_size": len(bytes), "blob_md5": md5}
+
+            upload_res = self.sumo_connection.api.post(
+                f"/objects('{fmu_id}')", json=metadata
+            )
+            self.sumo_connection.api.blob_client.upload_blob(
+                blob=bytes, url=upload_res.json()["blob_url"]
+            )
+        else:
+            logger.info("Parameters.txt already exists")
 
     def upload(self, threads=4, max_attempts=1, register_case=False):
         """Trigger upload of files.
@@ -240,7 +295,9 @@ class CaseOnDisk:
 
             if register_case:
                 self.register()
-                logger.info("Waiting 1 minute for Sumo to create the case container")
+                logger.info(
+                    "Waiting 1 minute for Sumo to create the case container"
+                )
                 time.sleep(20)  # Wait for Sumo to create the container
             else:
                 # We catch the situation where case is not registered on Sumo but
