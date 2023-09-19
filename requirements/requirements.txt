@@ -5,7 +5,7 @@ sumo-wrapper-python
 xtgeo
 azure-core
 pyarrow; python_version > "3.6.1"
-ert
-ecl2df
+ert; sys_platform != 'win32'
+ecl2df; sys_platform != 'win32'
 fmu-dataio
 OpenVDS; sys_platform != 'darwin'
