@@ -190,6 +190,8 @@ class FileOnDisk:
 
         backoff = [1, 3, 9]
 
+        # UPLOAD METADATA
+
         for i in backoff:
             logger.debug("backoff in outer loop is %s", str(i))
 
@@ -249,6 +251,7 @@ class FileOnDisk:
 
         # UPLOAD BLOB
 
+
         _t0_blob = time.perf_counter()
         upload_response = {}
         for i in backoff:
@@ -275,7 +278,7 @@ class FileOnDisk:
                             # Outer code expects and interprets http error codes
                             upload_response["status_code"] = 418  
                             upload_response["text"] = "FAILED SEGY upload as OpenVDS. " + cmd_result.stderr
-                else:                
+                else:
                     response = self._upload_byte_string(
                         sumo_connection=sumo_connection,
                         object_id=self.sumo_object_id,
@@ -321,7 +324,7 @@ class FileOnDisk:
                 continue
 
             except AuthenticationError as err:
-                logger.debug("Upload failed: %s", upload_response["text"])
+                logger.debug("Upload failed: %s", upload_response.get("text"))
                 result["status"] = "rejected"
                 self._delete_metadata(sumo_connection, self.sumo_object_id)
                 return result
@@ -344,3 +347,4 @@ class FileOnDisk:
             result["status"] = "ok"
 
         return result
+
