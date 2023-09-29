@@ -59,9 +59,10 @@ setup(
         "Development Status :: 3 - Alpha",
         "Intended Audience :: Developers",
         "Natural Language :: English",
-        "Programming Language :: Python :: 3.6",
-        "Programming Language :: Python :: 3.7",
         "Programming Language :: Python :: 3.8",
+        "Programming Language :: Python :: 3.9",
+        "Programming Language :: Python :: 3.10",
+        "Programming Language :: Python :: 3.11",
     ],
     entry_points={
         "ert": [
@@ -77,7 +78,7 @@ setup(
     setup_requires=SETUP_REQUIREMENTS,
     test_suite="tests",
     extras_require=EXTRAS_REQUIRE,
-    python_requires=">=3.6",
+    python_requires=">=3.8",
     packages=find_packages("src"),
     package_dir={"": "src"},
     include_package_data=True,
