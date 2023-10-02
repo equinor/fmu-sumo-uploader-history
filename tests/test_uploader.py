@@ -404,7 +404,5 @@ def test_teardown(token):
     for f in files:
         if f.endswith(".yml"):
             dest_file = test_dir + os.path.sep + f
-            print(f)
-            print (dest_file)
             _update_metadata_file_with_unique_uuid(dest_file, 
                 "11111111-1111-1111-1111-111111111111")
