@@ -6,13 +6,14 @@ from pathlib import Path
 import logging
 import subprocess
 import json
+import yaml
 
 from fmu.sumo import uploader
 
 if not sys.platform.startswith('darwin'):
     import openvds
 
-# run the tests from the root dir
+# Run the tests from the root dir
 TEST_DIR = Path(__file__).parent / "../"
 os.chdir(TEST_DIR)
 
@@ -36,10 +37,29 @@ class SumoConnection:
 
 
 def _remove_cached_case_id():
+    """The sumo uploader caches case uuid on disk, but we should remove this 
+        file between tests"""
     try:
         os.remove("tests/data/test_case_080/sumo_parent_id.yml")
     except FileNotFoundError:
         pass
+
+def _update_metadata_file_with_unique_uuid(metadata_file, unique_case_uuid): 
+    """Updates an existing sumo metadata file with unique case uuid. 
+        (To be able to run tests in parallell towards Sumo server,
+        unique case uuids must be used.)
+    """
+
+    # Read the sumo metadata file given as input
+    with open(metadata_file) as f:
+        parsed_yaml = yaml.safe_load(f)
+    
+    # Update case uuid with the given unique uuid
+    parsed_yaml['fmu']['case']['uuid'] = str(unique_case_uuid)
+    
+    # Update the metadata file using the unique uuid
+    with open(metadata_file, 'w') as f:
+        yaml.dump(parsed_yaml, f)
 
 
 ### TESTS ###
@@ -56,43 +76,53 @@ def test_initialization(token):
 
 
 def test_pre_teardown(token):
-    """Run teardown first to remove remnants from other test runs."""
-    test_teardown(token)
+    """Run teardown first to remove remnants from other test runs
+    and prepare for running test suite again."""
+
+    _remove_cached_case_id()
 
 
-def test_upload_without_registration(token):
-    """Assert that attempting to upload to a non-existing case gives warning."""
+def test_upload_without_registration(token, unique_uuid):
+    """Assert that attempting to upload to a non-existing/un-registered case gives warning."""
     sumo_connection = uploader.SumoConnection(env=ENV, token=token)
 
     _remove_cached_case_id()
 
+    case_file = "tests/data/test_case_080/case.yml"
+    _update_metadata_file_with_unique_uuid(case_file, unique_uuid)
+    
     case = uploader.CaseOnDisk(
-        case_metadata_path="tests/data/test_case_080/case.yml",
+        case_metadata_path=case_file,
         sumo_connection=sumo_connection,
         verbosity="DEBUG",
     )
-    case.add_files("tests/data/test_case_080/surface.bin")
-
+    
+    # On purpose NOT calling case.register before adding file here
+    child_binary_file = "tests/data/test_case_080/surface.bin"
+    child_metadata_file = "tests/data/test_case_080/.surface.bin.yml"
+    _update_metadata_file_with_unique_uuid(child_metadata_file, unique_uuid)
+    case.add_files(child_binary_file)
     with pytest.warns(UserWarning, match="Case is not registered"):
         case.upload(threads=1)
 
 
 def test_case(token):
-    """Assert that after uploading case to Sumo, the case is there and the only one."""
+    """Assert that after uploading case to Sumo, the case is there and is the only one."""
     sumo_connection = uploader.SumoConnection(env=ENV, token=token)
 
     _remove_cached_case_id()
 
     logger.debug("initialize CaseOnDisk")
+
+    case_file = "tests/data/test_case_080/case.yml"
     e = uploader.CaseOnDisk(
-        case_metadata_path="tests/data/test_case_080/case.yml",
+        case_metadata_path=case_file,
         sumo_connection=sumo_connection,
     )
 
-    query = f"class:case AND fmu.case.uuid:{e.fmu_case_uuid}"
-
-    # assert that it is not there in the first place
+    # Assert that this case is not there in the first place
     logger.debug("Asserting that the test case is not already there")
+    query = f"class:case AND fmu.case.uuid:{e.fmu_case_uuid}"
     search_results = sumo_connection.api.get(
         "/search", query=query, size=100, **{"from": 0}
     )
@@ -102,11 +132,11 @@ def test_case(token):
     hits = search_results.get("hits").get("hits")
     assert len(hits) == 0
 
-    # register it
+    # Register the case
     e.register()
+    time.sleep(1)
 
-    # assert that it is there now
-    time.sleep(3)  # wait 3 seconds
+    # assert that the case is there now
     search_results = sumo_connection.api.get(
         "/search", query=query, size=100, **{"from": 0}
     )
@@ -114,23 +144,35 @@ def test_case(token):
     logger.debug(search_results.get("hits"))
     assert len(hits) == 1
 
+    # Delete this case
+    logger.debug("Cleanup after test: delete case")
+    path = f"/objects('{e.sumo_parent_id}')"
+    sumo_connection.api.delete(path=path)
 
-def test_one_file(token):
+
+def test_one_file(token, unique_uuid):
     """Upload one file to Sumo. Assert that it is there."""
 
     sumo_connection = uploader.SumoConnection(env=ENV, token=token)
 
     _remove_cached_case_id()
 
+    logger.debug("initialize CaseOnDisk")
+    case_file = "tests/data/test_case_080/case.yml"
+    _update_metadata_file_with_unique_uuid(case_file, unique_uuid)    
     e = uploader.CaseOnDisk(
-        case_metadata_path="tests/data/test_case_080/case.yml",
+        case_metadata_path=case_file,
         sumo_connection=sumo_connection,
     )
     e.register()
-    e.add_files("tests/data/test_case_080/surface.bin")
-    e.upload()
+    time.sleep(1)
 
-    time.sleep(4)
+    child_binary_file = "tests/data/test_case_080/surface.bin" 
+    child_metadata_file = "tests/data/test_case_080/.surface.bin.yml" 
+    _update_metadata_file_with_unique_uuid(child_metadata_file, unique_uuid)
+    e.add_files(child_binary_file)
+    e.upload()
+    time.sleep(1)
 
     query = f"{e.fmu_case_uuid}"
     search_results = sumo_connection.api.get(
@@ -139,8 +181,13 @@ def test_one_file(token):
     total = search_results.get("hits").get("total").get("value")
     assert total == 2
 
+    # Delete this case
+    logger.debug("Cleanup after test: delete case")
+    path = f"/objects('{e.sumo_parent_id}')"
+    sumo_connection.api.delete(path=path)
 
-def test_missing_metadata(token):
+
+def test_missing_metadata(token, unique_uuid):
     """
     Try to upload files where one does not have metadata. Assert that warning is given
     and that upload commences with the other files. Check that the children are present.
@@ -149,12 +196,22 @@ def test_missing_metadata(token):
 
     _remove_cached_case_id()
 
+    case_file = "tests/data/test_case_080/case.yml"
+    _update_metadata_file_with_unique_uuid(case_file, unique_uuid)
     e = uploader.CaseOnDisk(
-        case_metadata_path="tests/data/test_case_080/case.yml",
+        case_metadata_path=case_file,
         sumo_connection=sumo_connection,
     )
+    e.register()
 
-    # Assert that expected warning was given
+    # Add a valid child
+    child_binary_file = "tests/data/test_case_080/surface.bin" 
+    child_metadata_file = "tests/data/test_case_080/.surface.bin.yml" 
+    _update_metadata_file_with_unique_uuid(child_metadata_file, unique_uuid)
+    e.add_files(child_binary_file)
+
+    # Assert that expected warning is given when the binary file
+    # do not have a companion metadata file
     with pytest.warns(
         UserWarning
     ) as warnings_record:  # testdata contains one file with missing metadata
@@ -167,7 +224,10 @@ def test_missing_metadata(token):
                 .endswith("No metadata, skipping file.")
             )
 
-    # Assert children is on Sumo
+    e.upload()
+    time.sleep(1)
+
+    # Assert parent and valid child is on Sumo
     query = f"{e.fmu_case_uuid}"
     search_results = sumo_connection.api.get(
         "/search", query=query, size=100, **{"from": 0}
@@ -175,8 +235,13 @@ def test_missing_metadata(token):
     total = search_results.get("hits").get("total").get("value")
     assert total == 2
 
+    # Delete this case
+    logger.debug("Cleanup after test: delete case")
+    path = f"/objects('{e.sumo_parent_id}')"
+    sumo_connection.api.delete(path=path)
 
-def test_wrong_metadata(token):
+
+def test_wrong_metadata(token, unique_uuid):
     """
     Try to upload files where one does have metadata with error. Assert that warning is given
     and that upload commences with the other files. Check that the children are present.
@@ -185,18 +250,30 @@ def test_wrong_metadata(token):
 
     _remove_cached_case_id()
 
+    case_file = "tests/data/test_case_080/case.yml"
+    _update_metadata_file_with_unique_uuid(case_file, unique_uuid)
     e = uploader.CaseOnDisk(
-        case_metadata_path="tests/data/test_case_080/case.yml",
+        case_metadata_path=case_file,
         sumo_connection=sumo_connection,
     )
+    e.register()
 
-    # Assert that expected warning was given
-    e.add_files("tests/data/test_case_080/surface_error.bin")
+    # Add a valid child
+    child_binary_file = "tests/data/test_case_080/surface.bin" 
+    child_metadata_file = "tests/data/test_case_080/.surface.bin.yml" 
+    _update_metadata_file_with_unique_uuid(child_metadata_file, unique_uuid)
+    e.add_files(child_binary_file)
+
+    # Add a child with problem in its metadata file
+    problem_binary_file = "tests/data/test_case_080/surface_error.bin"
+    problem_metadata_file = "tests/data/test_case_080/.surface_error.bin.yml" 
+    _update_metadata_file_with_unique_uuid(problem_metadata_file, unique_uuid)
+    e.add_files(problem_binary_file)
 
     e.upload()
-    time.sleep(4)
+    time.sleep(1)
 
-    # Assert children is on Sumo
+    # Assert parent and valid child are on Sumo
     query = f"{e.fmu_case_uuid}"
     search_results = sumo_connection.api.get(
         "/search", query=query, size=100, **{"from": 0}
@@ -204,9 +281,14 @@ def test_wrong_metadata(token):
     total = search_results.get("hits").get("total").get("value")
     assert total == 2
     
+    # Delete this case
+    logger.debug("Cleanup after test: delete case")
+    path = f"/objects('{e.sumo_parent_id}')"
+    sumo_connection.api.delete(path=path)
 
 @pytest.mark.skipif(sys.platform.startswith('darwin'), reason="do not run OpenVDS SEGYImport on mac os")
-def test_openvds_available(token):
+def test_openvds_available():
+    """Test that openvds is installed and can be successfully called"""
     python_path = os.path.dirname(sys.executable)
     logger.info(python_path)
     path_to_SEGYImport = os.path.join(python_path, '..', 'bin', 'SEGYImport')
@@ -223,20 +305,28 @@ def test_openvds_available(token):
 
 
 @pytest.mark.skipif(sys.platform.startswith('darwin'), reason="do not run OpenVDS SEGYImport on mac os")
-def test_seismic_openvds_file(token):
+def test_seismic_openvds_file(token, unique_uuid):
     """Upload seimic in OpenVDS format to Sumo. Assert that it is there."""
     sumo_connection = uploader.SumoConnection(env=ENV, token=token)
+
+    case_file = "tests/data/test_case_080/case_segy.yml"
+    _update_metadata_file_with_unique_uuid(case_file, unique_uuid)
     e = uploader.CaseOnDisk(
-        case_metadata_path="tests/data/test_case_080/case_segy.yml",
+        case_metadata_path=case_file,
         sumo_connection=sumo_connection,
     )
-    segy_filepath = "tests/data/test_case_080/seismic.segy"
     e.register()
+    time.sleep(1)
+
+    child_binary_file = "tests/data/test_case_080/seismic.segy"
+    child_metadata_file = "tests/data/test_case_080/.seismic.segy.yml"
+    _update_metadata_file_with_unique_uuid(child_metadata_file, unique_uuid)
+    segy_filepath = child_binary_file
     e.add_files(segy_filepath)
     e.upload()
+    time.sleep(1)
 
-    time.sleep(4)
-
+    # Read the parent object from Sumo
     query = f"_sumo.parent_object: {e.fmu_case_uuid}"
     search_results = sumo_connection.api.get(
         "/search", query=query, size=100, **{"from": 0}
@@ -244,13 +334,16 @@ def test_seismic_openvds_file(token):
     total = search_results.get("hits").get("total").get("value")
     assert total == 1
 
+    # Verify some of the metadata values
     assert search_results.get("hits").get("hits")[0].get("_source").get("data").get("format") == "openvds"
     assert search_results.get("hits").get("hits")[0].get("_source").get("file").get("checksum_md5") == ""
 
-    # Get SAS token to read from az blob store
+    # Get SAS token to read seismic directly from az blob store
     child_id = search_results.get("hits").get("hits")[0].get("_id")
     method = f"/objects('{child_id}')/blob/authuri"
     token_results = sumo_connection.api.get(method)
+    # Sumo server have had 2 different ways of returning the SAS token, 
+    # and this code should be able to work with both
     try:
         url = '"azureSAS:' + json.loads(token_results.decode("utf-8")).get("baseuri")[6:] + child_id + '"'
         url_conn = '"Suffix=?' + json.loads(token_results.decode("utf-8")).get("auth") + '"'
@@ -291,40 +384,27 @@ def test_seismic_openvds_file(token):
     # Delete this case
     path = f"/objects('{e.fmu_case_uuid}')"
     sumo_connection.api.delete(path=path)
-    time.sleep(30)  # Sumo removes the container
+    # Sumo/Azure removes the container which takes some time
+    time.sleep(30)  
 
     # OpenVDS reads should fail after deletion
     with pytest.raises(RuntimeError, match="Error on downloading*"):
         handle = openvds.open(url[1:-1], url_conn[1:-1])
-
+        
             
 def test_teardown(token):
-    """Teardown all testdata"""
-    sumo_connection = uploader.SumoConnection(env=ENV, token=token)
+    """Teardown all testdata between every test"""
 
     _remove_cached_case_id()
 
-    e = uploader.CaseOnDisk(
-        case_metadata_path="tests/data/test_case_080/case.yml",
-        sumo_connection=sumo_connection,
-    )
-
-    # This uploads case metadata to Sumo
-    e.register()
-
-    time.sleep(5)  # Sumo creates the container
-
-    path = f"/objects('{e.sumo_parent_id}')"
-    sumo_connection.api.delete(path=path)
-
-    time.sleep(30)  # Sumo removes the container
-
-    # Assert children is not on Sumo
-    query = f"class:case AND {e.fmu_case_uuid}"
-    search_results = sumo_connection.api.get(
-        "/search", query=query, size=100, **{"from": 0}
-    )
-    total = search_results["hits"]["total"]["value"]
-    assert total == 0
-
-    _remove_cached_case_id()
+    # Set all the metadata files back to same case uuid as before, to avoid 
+    # git reporting changes. 
+    test_dir = "tests/data/test_case_080/"
+    files = os.listdir(test_dir)
+    for f in files:
+        if f.endswith(".yml"):
+            dest_file = test_dir + os.path.sep + f
+            print(f)
+            print (dest_file)
+            _update_metadata_file_with_unique_uuid(dest_file, 
+                "11111111-1111-1111-1111-111111111111")
