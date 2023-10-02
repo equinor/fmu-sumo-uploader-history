@@ -292,10 +292,12 @@ def test_openvds_available():
     python_path = os.path.dirname(sys.executable)
     logger.info(python_path)
     path_to_SEGYImport = os.path.join(python_path, '..', 'bin', 'SEGYImport')
+    print("Path to segyimport, 1: " + path_to_SEGYImport)
     if sys.platform.startswith("win"):
         path_to_SEGYImport = path_to_SEGYImport + ".exe"
     if not os.path.isfile(path_to_SEGYImport):
         path_to_SEGYImport = os.path.join(python_path, '..', 'shims', 'SEGYImport')
+    print("Path to segyimport, 2: " + path_to_SEGYImport)
 
     logger.info(path_to_SEGYImport)
     check_SEGYImport_version = subprocess.run([path_to_SEGYImport, '--version'], 
