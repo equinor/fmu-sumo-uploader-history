@@ -45,3 +45,4 @@ jobs:
 
           pip install -r requirements/requirements_test.txt
           pytest -s --timeout=300
+        shell: bash
