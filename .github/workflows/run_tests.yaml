@@ -38,8 +38,8 @@ jobs:
           pip install pip -U &&
           pip install .
       - name: Run tests
+        shell: bash
         run: |
-          shell: bash
           az --version
           az account
           pip show sumo-wrapper-python
