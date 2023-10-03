@@ -41,7 +41,7 @@ jobs:
         shell: bash
         run: |
           az --version
-          az account
+          az account list
           pip show sumo-wrapper-python
           pip show openvds
           python -c  'import sys; print(sys.platform)'
