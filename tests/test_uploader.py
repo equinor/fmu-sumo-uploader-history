@@ -289,15 +289,21 @@ def test_wrong_metadata(token, unique_uuid):
 @pytest.mark.skipif(sys.platform.startswith('darwin'), reason="do not run OpenVDS SEGYImport on mac os")
 def test_openvds_available():
     """Test that openvds is installed and can be successfully called"""
+    filename = "SEGYImport"
+    if sys.platform.startswith("win"):
+        filename = "SEGYImport.exe"
     python_path = os.path.dirname(sys.executable)
     logger.info(python_path)
-    path_to_SEGYImport = os.path.join(python_path, '..', 'bin', 'SEGYImport')
-    print("Path to segyimport, 1: " + path_to_SEGYImport)
-    if sys.platform.startswith("win"):
-        path_to_SEGYImport = path_to_SEGYImport + ".exe"
+    # The SEGYImport folder location is not fixed
+    path_to_SEGYImport = os.path.join(python_path, 'bin', filename)
     if not os.path.isfile(path_to_SEGYImport):
-        path_to_SEGYImport = os.path.join(python_path, '..', 'shims', 'SEGYImport')
-    print("Path to segyimport, 2: " + path_to_SEGYImport)
+        path_to_SEGYImport = os.path.join(python_path, '..', 'bin', filename)
+        if not os.path.isfile(path_to_SEGYImport):
+            path_to_SEGYImport = os.path.join(python_path, '..', 'shims', filename)
+            if not os.path.isfile(path_to_SEGYImport): 
+                print("Could not find SEGYImport folder location")
+                logger.error("Could not find SEGYImport folder location")
+    print("Path to SEGYImport: " + path_to_SEGYImport)
 
     logger.info(path_to_SEGYImport)
     check_SEGYImport_version = subprocess.run([path_to_SEGYImport, '--version'], 
