@@ -78,14 +78,21 @@ def _get_segyimport_cmdstr(blob_url, object_id, file_path, sample_unit):
 
     persistent_id = '"' + object_id + '"'
 
-    python_path = os.path.dirname(sys.executable)
-    path_to_SEGYImport = os.path.join(python_path, '..', 'bin', 'SEGYImport') 
+    segy_command = "SEGYImport"
     if sys.platform.startswith("win"):
-        path_to_SEGYImport = path_to_SEGYImport + ".exe"
-    if not os.path.isfile(path_to_SEGYImport):
-        path_to_SEGYImport = os.path.join(python_path, '..', 'shims', 'SEGYImport')
+        segy_command = segy_command + ".exe"
+    python_path = os.path.dirname(sys.executable)
+    # The SEGYImport folder location is not fixed
+    path_to_executable = os.path.join(python_path, 'bin', segy_command)
+    if not os.path.isfile(path_to_executable):
+        path_to_executable = os.path.join(python_path, '..', 'bin', segy_command)
+        if not os.path.isfile(path_to_executable):
+            path_to_executable = os.path.join(python_path, '..', 'shims', segy_command)
+            if not os.path.isfile(path_to_executable): 
+                logger.error("Could not find OpenVDS executables folder location")
+    logger.info("Path to OpenVDS executable: " + path_to_executable)
 
-    cmdstr = ' '.join([path_to_SEGYImport, 
+    cmdstr = ' '.join([path_to_executable, 
         '--compression-method', 'RLE',
         '--brick-size', '64', 
         '--sample-unit', sample_unit, 
