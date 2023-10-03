@@ -12,8 +12,8 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        python-version: ["3.8", "3.9", "3.10", "3.11"]
-        os: [ubuntu-latest, windows-latest]
+        python-version: ["3.8"]
+        os: [windows-latest]
     permissions:
       contents: read
       id-token: write
@@ -43,9 +43,9 @@ jobs:
           pip show sumo-wrapper-python
           pip show openvds
           python -c  'import sys; print(sys.platform)'
+          get-childitem -Path C:\ -Filter SEGYImport.exe -Recurse -ErrorAction SilentlyContinue -Force
           access_token=$(az account get-access-token --scope api://88d2b022-3539-4dda-9e66-853801334a86/.default --query accessToken --output tsv)
           export ACCESS_TOKEN=$access_token
 
           pip install -r requirements/requirements_test.txt
           pytest -s --timeout=300
-        shell: bash
