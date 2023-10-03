@@ -286,26 +286,30 @@ def test_wrong_metadata(token, unique_uuid):
     path = f"/objects('{e.sumo_parent_id}')"
     sumo_connection.api.delete(path=path)
 
-@pytest.mark.skipif(sys.platform.startswith('darwin'), reason="do not run OpenVDS SEGYImport on mac os")
-def test_openvds_available():
-    """Test that openvds is installed and can be successfully called"""
-    filename = "SEGYImport"
+
+def _get_segy_path(segy_command):
+    """Find the path to the OpenVDS SEGYImport or SEGYExport executables. 
+    Supply either 'SEGYImport' or 'SEGYExport' as parameter"""
     if sys.platform.startswith("win"):
-        filename = "SEGYImport.exe"
+        segy_command = segy_command + ".exe"
     python_path = os.path.dirname(sys.executable)
     logger.info(python_path)
     # The SEGYImport folder location is not fixed
-    path_to_SEGYImport = os.path.join(python_path, 'bin', filename)
-    if not os.path.isfile(path_to_SEGYImport):
-        path_to_SEGYImport = os.path.join(python_path, '..', 'bin', filename)
-        if not os.path.isfile(path_to_SEGYImport):
-            path_to_SEGYImport = os.path.join(python_path, '..', 'shims', filename)
-            if not os.path.isfile(path_to_SEGYImport): 
-                print("Could not find SEGYImport folder location")
-                logger.error("Could not find SEGYImport folder location")
-    print("Path to SEGYImport: " + path_to_SEGYImport)
+    path_to_executable = os.path.join(python_path, 'bin', segy_command)
+    if not os.path.isfile(path_to_executable):
+        path_to_executable = os.path.join(python_path, '..', 'bin', segy_command)
+        if not os.path.isfile(path_to_executable):
+            path_to_executable = os.path.join(python_path, '..', 'shims', segy_command)
+            if not os.path.isfile(path_to_executable): 
+                logger.error("Could not find OpenVDS executables folder location")
+    logger.info("Path to OpenVDS executable: " + path_to_executable)
+    return path_to_executable
 
-    logger.info(path_to_SEGYImport)
+
+@pytest.mark.skipif(sys.platform.startswith('darwin'), reason="do not run OpenVDS SEGYImport on mac os")
+def test_openvds_available():
+    """Test that OpenVDS is installed and can be successfully called"""
+    path_to_SEGYImport = _get_segy_path("SEGYImport")
     check_SEGYImport_version = subprocess.run([path_to_SEGYImport, '--version'], 
                                             capture_output=True, text=True)
     assert check_SEGYImport_version.returncode == 0
@@ -364,12 +368,7 @@ def test_seismic_openvds_file(token, unique_uuid):
     exported_filepath = "exported.segy"
     if os.path.exists(exported_filepath):
         os.remove(exported_filepath)
-    python_path = os.path.dirname(sys.executable)
-    path_to_SEGYExport = os.path.join(python_path, '..', 'bin', 'SEGYExport')
-    if sys.platform.startswith("win"):
-        path_to_SEGYExport = path_to_SEGYExport + ".exe"
-    if not os.path.isfile(path_to_SEGYExport):
-        path_to_SEGYExport = os.path.join(python_path, '..', 'shims', 'SEGYExport')
+    path_to_SEGYExport = _get_segy_path("SEGYExport")
     cmdstr = ' '.join([path_to_SEGYExport, 
         '--url', url,
         '--connection', url_conn,
