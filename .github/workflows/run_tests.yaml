@@ -35,8 +35,8 @@ jobs:
 
       - name: Install fmu-sumo-uploader
         run: >
-          pip install pip -U &&
-          pip install .
+          python -m pip install --upgrade pip &&
+          python -m pip install .
       - name: Run tests
         shell: bash
         run: |
