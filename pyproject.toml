@@ -1,13 +1,12 @@
+[build-system]
+requires = ["setuptools", "setuptools-scm", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools_scm]
+write_to = "src/fmu/sumo/uploader/version.py"
+
 [tool.isort]
 profile = "black"
-
-[build-system]
-requires = [
-  "pip>=19.1.1",
-  "setuptools>=28",
-  "setuptools_scm>=3.2.0",
-  "wheel",
-]
 
 [tool.black]
 line-length = 79
