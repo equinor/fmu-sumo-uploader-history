@@ -45,7 +45,7 @@ where ``MY_JOB`` typically refers to a post-processing job creating data
 and where <CASEPATH> typically refers to <SCRATCH>/<USER>/<CASE>
 
 <SUMO_ENV> is typically set in the config as it is used also by forward jobs.
-It must refer to a valid Sumo environment. Normally this should be set to prod.""" 
+It must refer to a valid Sumo environment. Normally this should be set to prod."""
 
 
 def main() -> None:
@@ -67,6 +67,7 @@ def main() -> None:
 
     sumo_upload_main(
         casepath=args.casepath,
+        conf_path=args.conf_path,
         searchpath=args.searchpath,
         env=args.env,
         metadata_path=args.metadata_path,
@@ -75,7 +76,12 @@ def main() -> None:
 
 
 def sumo_upload_main(
-    casepath: str, searchpath: str, env: str, metadata_path: str, threads: int
+    casepath: str,
+    conf_path: str,
+    searchpath: str,
+    env: str,
+    metadata_path: str,
+    threads: int,
 ) -> None:
     """A "main" function that can be used both from command line and from ERT workflow"""
 
@@ -95,7 +101,8 @@ def sumo_upload_main(
         logger.info("case_metadata_path is %s", case_metadata_path)
 
         e = uploader.CaseOnDisk(
-            case_metadata_path=case_metadata_path, sumo_connection=sumo_connection
+            case_metadata_path=case_metadata_path,
+            sumo_connection=sumo_connection,
         )
         # add files to the case on disk object
         logger.info("Adding files. Search path is %s", searchpath)
@@ -110,17 +117,20 @@ def sumo_upload_main(
         # upload the indexed files
         logger.info("Starting upload")
         e.upload(threads=threads, register_case=False)
-        e.upload_parameters_txt()
+        e.upload_parameters_txt(glob_var_path=conf_path)
         logger.info("Upload done")
     except Exception as err:
-        logger.info(
-            "Problem related to Sumo upload: "  f"{err}"
+        logger.info("Problem related to Sumo upload: " f"{err}")
+        warnings.warn("Problem related to Sumo upload: " f"{err}")
+        _sumo_logger = sumo_connection.api.getLogger(
+            "log_2_server_sumo_upload"
         )
-        warnings.warn(
-            "Problem related to Sumo upload: " f"{err}")
-        _sumo_logger = sumo_connection.api.getLogger("log_2_server_sumo_upload")
         _sumo_logger.propagate = False
-        _sumo_logger.warning("Problem related to Sumo upload for case: %s; %s", case_metadata_path, err)
+        _sumo_logger.warning(
+            "Problem related to Sumo upload for case: %s; %s",
+            case_metadata_path,
+            err,
+        )
         return
 
 
@@ -140,6 +150,7 @@ class SumoUpload(ErtScript):
         _check_arguments(args)
         sumo_upload_main(
             casepath=args.casepath,
+            conf_path=args.conf_path,
             searchpath=args.searchpath,
             env=args.env,
             metadata_path=args.metadata_path,
@@ -151,11 +162,20 @@ def _get_parser() -> argparse.ArgumentParser:
     """Construct parser object for sumo_upload."""
 
     parser = argparse.ArgumentParser()
-    parser.add_argument("casepath", type=str, help="Absolute path to case root")
+    parser.add_argument(
+        "casepath", type=str, help="Absolute path to case root"
+    )
     parser.add_argument(
         "searchpath", type=str, help="Absolute search path for files to upload"
     )
     parser.add_argument("env", type=str, help="Sumo environment to use.")
+    parser.add_argument(
+        "conf_path",
+        type=str,
+        help="Absolute path to global variables",
+        default="./fmuconfig/output/global_variables.yml",
+    )
+
     parser.add_argument(
         "--threads", type=int, help="Set number of threads to use.", default=2
     )
@@ -165,9 +185,13 @@ def _get_parser() -> argparse.ArgumentParser:
         help="Case-relative path to case metadata",
         default="share/metadata/fmu_case.yml",
     )
-    parser.add_argument("-v", "--verbose", action="store_true", help="Verbose output")
     parser.add_argument(
-        "--debug", action="store_true", help="Debug output, more verbose than --verbose"
+        "-v", "--verbose", action="store_true", help="Verbose output"
+    )
+    parser.add_argument(
+        "--debug",
+        action="store_true",
+        help="Debug output, more verbose than --verbose",
     )
 
     return parser
@@ -185,7 +209,9 @@ def _check_arguments(args) -> None:
     if not Path(args.casepath).is_absolute():
         if args.casepath.startswith("<") and args.casepath.endswith(">"):
             ValueError("ERT variable is not defined: %s", args.casepath)
-        raise ValueError("Provided casepath must be an absolute path to the case root")
+        raise ValueError(
+            "Provided casepath must be an absolute path to the case root"
+        )
 
     if not Path(args.casepath).exists():
         raise ValueError("Provided case path does not exist")
