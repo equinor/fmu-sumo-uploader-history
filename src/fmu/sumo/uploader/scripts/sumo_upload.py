@@ -67,21 +67,21 @@ def main() -> None:
 
     sumo_upload_main(
         casepath=args.casepath,
-        conf_path=args.conf_path,
         searchpath=args.searchpath,
         env=args.env,
         metadata_path=args.metadata_path,
         threads=args.threads,
+        config_path=args.config_path,
     )
 
 
 def sumo_upload_main(
     casepath: str,
-    conf_path: str,
     searchpath: str,
     env: str,
     metadata_path: str,
     threads: int,
+    config_path: str,
 ) -> None:
     """A "main" function that can be used both from command line and from ERT workflow"""
 
@@ -117,7 +117,7 @@ def sumo_upload_main(
         # upload the indexed files
         logger.info("Starting upload")
         e.upload(threads=threads, register_case=False)
-        e.upload_parameters_txt(glob_var_path=conf_path)
+        e.upload_parameters_txt(glob_var_path=config_path)
         logger.info("Upload done")
     except Exception as err:
         logger.info("Problem related to Sumo upload: " f"{err}")
@@ -150,11 +150,11 @@ class SumoUpload(ErtScript):
         _check_arguments(args)
         sumo_upload_main(
             casepath=args.casepath,
-            conf_path=args.conf_path,
             searchpath=args.searchpath,
             env=args.env,
             metadata_path=args.metadata_path,
             threads=args.threads,
+            config_path=args.config_path,
         )
 
 
@@ -170,7 +170,7 @@ def _get_parser() -> argparse.ArgumentParser:
     )
     parser.add_argument("env", type=str, help="Sumo environment to use.")
     parser.add_argument(
-        "conf_path",
+        "--config_path",
         type=str,
         help="Absolute path to global variables",
         default="./fmuconfig/output/global_variables.yml",
