@@ -173,7 +173,7 @@ def _get_parser() -> argparse.ArgumentParser:
         "--config_path",
         type=str,
         help="Absolute path to global variables",
-        default="./fmuconfig/output/global_variables.yml",
+        default="fmuconfig/output/global_variables.yml",
     )
 
     parser.add_argument(
