@@ -3,7 +3,7 @@ requires = ["setuptools", "setuptools-scm", "wheel"]
 build-backend = "setuptools.build_meta"
 
 [tool.setuptools_scm]
-write_to = "src/fmu/sumo/uploader/version.py"
+# version_file = "src/fmu/sumo/uploader/_version.py"
 
 [tool.isort]
 profile = "black"
@@ -13,47 +13,22 @@ line-length = 79
 
 [project]
 name = "fmu-sumo-uploader"
-description = "A Python library for uploading files to Azure using sumo"
-readme = { file = "README.md", content-type = "text/markdown", charset = "UTF-8" }
-authors = [{ name = "Equinor", email = "dbs@equinor.com" }]
-license = { file = "LICENSE" }
 requires-python = ">=3.8"
 dynamic = ["version"]
-classifiers = [
-    "Development Status :: 5 - Development/Experimental",
-    "Environment :: Console",
-    "Environment :: MacOS X",
-    "Intended Audience :: Science/Research",
-    "License :: OSI Approved :: BSD License",
-    "Natural Language :: English",
-    "Operating System :: POSIX :: Linux",
-    "Operating System :: MacOS :: MacOS X",
-    "Programming Language :: Python :: 3.8",
-    "Programming Language :: Python :: 3.9",
-    "Programming Language :: Python :: 3.10",
-    # Topic :: Scientific/Engineering :: Bio-Informatics
-]
 dependencies = [
-    "sumo-wrapper-python",
-    "pandas",
-    "azure-core",
+    "sumo-wrapper-python>=1.0.3",
     "fmu-dataio",
-    "urllib3<2.0",
     "openvds; sys_platform != 'darwin'",
 ]
 
-[project.urls]
-Source = "https://github.com/equinor/fmu-sumo-uploader"
-Tracker = "https://github.com/equinor/fmu-sumo-uploader/issues"
-
 [project.optional-dependencies]
 test = ["pytest"]
+dev = ["black", "flake8"]
 
 [tool.setuptools]
 package-dir = { "" = "src" }
 include-package-data = true
 platforms = ["any"]
-
 
 [tool.setuptools.packages.find]
 where = ["src"]
