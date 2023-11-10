@@ -227,8 +227,10 @@ def _calculate_upload_stats(uploads):
     Given a list of results from file upload, calculate and return
     timing statistics for uploads."""
 
-    blob_upload_times = uploads["blob_upload_time_elapsed"]
-    metadata_upload_times = uploads["metadata_upload_time_elapsed"]
+    blob_upload_times = [u["blob_upload_time_elapsed"] for u in uploads]
+    metadata_upload_times = [
+        u["metadata_upload_time_elapsed"] for u in uploads
+    ]
 
     def _get_stats(values):
         return {
