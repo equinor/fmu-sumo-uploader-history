@@ -237,7 +237,7 @@ def _calculate_upload_stats(uploads):
             "mean": statistics.mean(values),
             "max": max(values),
             "min": min(values),
-            "std": statistics.stdev(values),
+            "std": statistics.stdev(values) if len(values) > 1 else 0.0,
         }
 
     stats = {
