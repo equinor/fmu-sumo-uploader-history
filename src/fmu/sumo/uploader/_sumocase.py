@@ -8,7 +8,7 @@ import logging
 import warnings
 import time
 import datetime
-import pandas as pd
+import statistics
 import httpx
 
 
@@ -51,7 +51,8 @@ class SumoCase:
         except httpx.HTTPStatusError as err:
             if err.response.status_code != 404:
                 logger.warning(
-                    f"Unexpected status code: {err.response.status_code}")
+                    f"Unexpected status code: {err.response.status_code}"
+                )
             return
 
     def upload(self, threads=4, max_attempts=1, register_case=False):
@@ -70,7 +71,8 @@ class SumoCase:
             if register_case:
                 self.register()
                 logger.info(
-                    "Waiting 1 minute for Sumo to create the case container")
+                    "Waiting 1 minute for Sumo to create the case container"
+                )
                 time.sleep(20)  # Wait for Sumo to create the container
             else:
                 # We catch the situation where case is not registered on Sumo but
@@ -201,12 +203,18 @@ def _get_log_msg(sumo_parent_id, status):
             "case_uuid": str(sumo_parent_id),
             "filepath": str(status.get("blob_file_path")),
             "metadata": {
-                "status_code": str(status.get("metadata_upload_response_status_code")),
+                "status_code": str(
+                    status.get("metadata_upload_response_status_code")
+                ),
                 "response_text": status.get("metadata_upload_response_text"),
             },
             "blob": {
-                "status_code": str(status.get("blob_upload_response_status_code")),
-                "response_text": ((status.get("blob_upload_response_status_text"))),
+                "status_code": str(
+                    status.get("blob_upload_response_status_code")
+                ),
+                "response_text": (
+                    (status.get("blob_upload_response_status_text"))
+                ),
             },
         }
     }
@@ -219,24 +227,25 @@ def _calculate_upload_stats(uploads):
     Given a list of results from file upload, calculate and return
     timing statistics for uploads."""
 
-    df = pd.DataFrame().from_dict(uploads)
+    blob_upload_times = [u["blob_upload_time_elapsed"] for u in uploads]
+    metadata_upload_times = [
+        u["metadata_upload_time_elapsed"] for u in uploads
+    ]
+
+    def _get_stats(values):
+        return {
+            "mean": statistics.mean(values),
+            "max": max(values),
+            "min": min(values),
+            "std": statistics.stdev(values) if len(values) > 1 else 0.0,
+        }
 
     stats = {
         "blob": {
-            "upload_time": {
-                "mean": df["blob_upload_time_elapsed"].mean(),
-                "max": df["blob_upload_time_elapsed"].max(),
-                "min": df["blob_upload_time_elapsed"].min(),
-                "std": df["blob_upload_time_elapsed"].std(),
-            },
+            "upload_time": _get_stats(blob_upload_times),
         },
         "metadata": {
-            "upload_time": {
-                "mean": df["metadata_upload_time_elapsed"].mean(),
-                "max": df["metadata_upload_time_elapsed"].max(),
-                "min": df["metadata_upload_time_elapsed"].min(),
-                "std": df["metadata_upload_time_elapsed"].std(),
-            },
+            "upload_time": _get_stats(metadata_upload_times),
         },
     }
 

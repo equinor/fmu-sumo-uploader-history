@@ -1,5 +1,5 @@
 # fmu-sumo-uploader
-Upload data from FMU to Sumo
+A Python library for uploading from FMU to sumo
 
 ### Concepts
 `SumoConnection`: The SumoConnection object represents the connection to Sumo, and will handle authentication etc when initiated. This object uses the Sumo python wrapper under the hood.
@@ -52,3 +52,6 @@ case.add_files("/globable/path/to/files/*.gri")
 case.upload()
 
 ```
+
+## Developer setup
+Run: `pip install .[dev]` to also install development requirements.
