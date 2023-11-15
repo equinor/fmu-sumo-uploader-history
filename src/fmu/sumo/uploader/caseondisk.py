@@ -142,6 +142,7 @@ class CaseOnDisk(SumoCase):
     ):
         """Upload parameters.txt if it is not present in Sumo for the current realization"""
         logger.info("Uploading parameters.txt")
+        print(f"CONFIG_PATH: {glob_var_path}")
 
         fmu_id = self.fmu_case_uuid
         realization_id = self.files[0].metadata["fmu"]["realization"]["uuid"]
