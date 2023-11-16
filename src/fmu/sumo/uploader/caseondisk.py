@@ -81,12 +81,15 @@ class CaseOnDisk(SumoCase):
         case_metadata = _load_case_metadata(case_metadata_path)
         super().__init__(case_metadata, sumo_connection, verbosity)
 
-        self._sumo_logger = sumo_connection.api.getLogger("log_2_server_caseondisk")
+        self._sumo_logger = sumo_connection.api.getLogger(
+            "log_2_server_caseondisk"
+        )
         self._sumo_logger.setLevel(logging.INFO)
         # Avoid that logging to sumo-server also is visible in local logging:
         self._sumo_logger.propagate = False
-        self._sumo_logger.info("Upload init for sumo_parent_id: "
-                               + str(self._sumo_parent_id))
+        self._sumo_logger.info(
+            "Upload init for sumo_parent_id: " + str(self._sumo_parent_id)
+        )
 
     def __str__(self):
         s = f"{self.__class__}, {len(self._files)} files."
@@ -139,12 +142,15 @@ class CaseOnDisk(SumoCase):
     ):
         """Upload parameters.txt if it is not present in Sumo for the current realization"""
         logger.info("Uploading parameters.txt")
+        print(f"CONFIG_PATH: {glob_var_path}")
 
         fmu_id = self.fmu_case_uuid
         realization_id = self.files[0].metadata["fmu"]["realization"]["uuid"]
         query = f"fmu.case.uuid:{fmu_id} AND fmu.realization.uuid:{realization_id} AND data.content:parameters"
 
-        search_res = self.sumo_connection.api.get("/search", {"$query": query}).json()
+        search_res = self.sumo_connection.api.get(
+            "/search", {"$query": query}
+        ).json()
 
         if search_res["hits"]["total"]["value"] == 0:
             with open(glob_var_path, "r") as variables_yml:
