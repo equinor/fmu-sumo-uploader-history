@@ -9,3 +9,4 @@ pyarrow; python_version > "3.6.1"
 # ecl2df; sys_platform != 'win32' and python_version < "3.11"
 fmu-dataio
 OpenVDS; sys_platform != 'darwin'
+ert

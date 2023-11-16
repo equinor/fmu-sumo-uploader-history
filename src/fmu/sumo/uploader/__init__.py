@@ -1,7 +1,7 @@
 """Top-level package for fmu.sumo.uploader"""
 
 try:
-    from .version import version
+    from ._version import version
 
     __version__ = version
 except ImportError:

@@ -3,10 +3,42 @@ requires = ["setuptools", "setuptools-scm", "wheel"]
 build-backend = "setuptools.build_meta"
 
 [tool.setuptools_scm]
-write_to = "src/fmu/sumo/uploader/version.py"
+version_file = "src/fmu/sumo/uploader/_version.py"
 
 [tool.isort]
 profile = "black"
 
 [tool.black]
 line-length = 79
+
+[project]
+name = "fmu-sumo-uploader"
+requires-python = ">=3.8"
+dynamic = ["version"]
+dependencies = [
+    "sumo-wrapper-python>=1.0.3",
+    "fmu-dataio",
+    "openvds; sys_platform != 'darwin'",
+    "ert"
+]
+
+[project.optional-dependencies]
+dev = ["black", "flake8", "pytest"]
+
+[tool.setuptools]
+package-dir = { "" = "src" }
+include-package-data = true
+platforms = ["any"]
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[bdist_wheel]
+universal = 1
+
+[project.scripts]
+sumo_upload = "fmu.sumo.uploader.scripts.sumo_upload:main"
+
+[project.entry-points.ert]
+fmu_sumo_jobs = "fmu.sumo.hook_implementations.jobs"
+sumo_upload = "fmu.sumo.uploader.scripts.sumo_upload"
