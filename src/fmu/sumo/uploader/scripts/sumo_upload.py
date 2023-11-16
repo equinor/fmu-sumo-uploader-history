@@ -81,7 +81,7 @@ def sumo_upload_main(
     env: str,
     metadata_path: str,
     threads: int,
-    config_path: str,
+    config_path: str = "fmuconfig/output/global_variables.yml",
 ) -> None:
     """A "main" function that can be used both from command line and from ERT workflow"""
 
