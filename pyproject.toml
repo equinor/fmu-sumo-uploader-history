@@ -19,7 +19,7 @@ dependencies = [
     "sumo-wrapper-python>=1.0.3",
     "fmu-dataio",
     "openvds; sys_platform != 'darwin'",
-    "ert"; sys_platform != "windows"
+    "ert; sys_platform != 'windows'"
 ]
 
 [project.optional-dependencies]
