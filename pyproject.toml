@@ -33,12 +33,9 @@ platforms = ["any"]
 [tool.setuptools.packages.find]
 where = ["src"]
 
-# [bdist_wheel]
-# universal = 1
-
 [project.scripts]
 sumo_upload = "fmu.sumo.uploader.scripts.sumo_upload:main"
 
 [project.entry-points.ert]
-fmu_sumo_jobs = "fmu.sumo.uploader.hook_implementations.jobs"
+fmu_sumo_uploader_jobs = "fmu.sumo.uploader.hook_implementations.jobs"
 sumo_upload = "fmu.sumo.uploader.scripts.sumo_upload"
