@@ -28,7 +28,7 @@ class SumoCase:
         self.case_metadata = _sanitize_datetimes(case_metadata)
         self._fmu_case_uuid = self._get_fmu_case_uuid()
         logger.debug("self._fmu_case_uuid is %s", self._fmu_case_uuid)
-        self._sumo_parent_id = self._get_sumo_parent_id()
+        self._sumo_parent_id = self._fmu_case_uuid
         logger.debug("self._sumo_parent_id is %s", self._sumo_parent_id)
         self._files = []
 
@@ -43,17 +43,6 @@ class SumoCase:
             raise ValueError("Could not get fmu_case_uuid from case metadata")
 
         return fmu_case_uuid
-
-    def _get_sumo_parent_id(self):
-        try:
-            self.sumo_connection.api.get(f"/objects('{self._fmu_case_uuid}')")
-            return self.fmu_case_uuid
-        except httpx.HTTPStatusError as err:
-            if err.response.status_code != 404:
-                logger.warning(
-                    f"Unexpected status code: {err.response.status_code}"
-                )
-            return
 
     def upload(self, threads=4, max_attempts=1, register_case=False):
         """Trigger upload of files.
