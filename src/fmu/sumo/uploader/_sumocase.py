@@ -79,6 +79,15 @@ class SumoCase:
         if failed_uploads:
             if any([res.get("metadata_upload_response_status_code") == 404 for res in failed_uploads]):
                 warnings.warn("Case is not registered on Sumo")
+                logger.info(
+                    "Case was not found on Sumo. If you are in the FMU context "
+                    "something may have gone wrong with the case registration "
+                    "or you have not specified that the case shall be uploaded."
+                    "A warning will be issued, and the script will stop. "
+                    "If you are NOT in the FMU context, you can specify that "
+                    "this script also registers the case by passing "
+                    "register=True. This should not be done in the FMU context."
+                )
 
         _dt = time.perf_counter() - _t0
 
