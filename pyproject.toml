@@ -19,7 +19,7 @@ dependencies = [
     "sumo-wrapper-python>=1.0.3",
     "fmu-dataio",
     "openvds; sys_platform != 'darwin'",
-    "ert; sys_platform != 'win32'"
+    "ert; sys_platform != 'win32'",
 ]
 
 [project.optional-dependencies]
@@ -33,12 +33,12 @@ platforms = ["any"]
 [tool.setuptools.packages.find]
 where = ["src"]
 
-[bdist_wheel]
-universal = 1
+# [bdist_wheel]
+# universal = 1
 
 [project.scripts]
 sumo_upload = "fmu.sumo.uploader.scripts.sumo_upload:main"
 
 [project.entry-points.ert]
-fmu_sumo_jobs = "fmu.sumo.hook_implementations.jobs"
+fmu_sumo_jobs = "fmu.sumo.uploader.hook_implementations.jobs"
 sumo_upload = "fmu.sumo.uploader.scripts.sumo_upload"
