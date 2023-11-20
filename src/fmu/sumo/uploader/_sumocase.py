@@ -44,48 +44,14 @@ class SumoCase:
 
         return fmu_case_uuid
 
-    def upload(self, threads=4, max_attempts=1, register_case=False):
+    def upload(self, threads=4):
         """Trigger upload of files.
-
-        Get sumo_parent_id. If None, case is not registered on Sumo.
 
         Upload all indexed files. Collect the files that have been uploaded OK, the
         ones that have failed and the ones that have been rejected.
 
         Retry the failed uploads X times."""
 
-        if self.sumo_parent_id is None:
-            logger.info("Case is not registered on Sumo")
-
-            if register_case:
-                self.register()
-                logger.info(
-                    "Waiting 1 minute for Sumo to create the case container"
-                )
-                time.sleep(20)  # Wait for Sumo to create the container
-            else:
-                # We catch the situation where case is not registered on Sumo but
-                # an upload is attempted anyway. In the FMU context, this can happen
-                # if something goes wrong with the initial case metadata creation and
-                # upload. If, for some reason, this fails and the case is never uploaded
-                # to Sumo, we (currently) want this script to not fail (and stop the
-                # workflow). Outside FMU context, this can be different and we retain
-                # the possibility for allowing this script to register the case.
-
-                logger.info(
-                    "Case was not found on Sumo. If you are in the FMU context "
-                    "something may have gone wrong with the case registration "
-                    "or you have not specified that the case shall be uploaded."
-                    "A warning will be issued, and the script will stop. "
-                    "If you are NOT in the FMU context, you can specify that "
-                    "this script also registers the case by passing "
-                    "register=True. This should not be done in the FMU context."
-                )
-                warnings.warn(
-                    "Case is not registered on Sumo.",
-                    UserWarning,
-                )
-                return
 
         if not self.files:
             raise FileExistsError("No files to upload. Check search string.")
@@ -95,7 +61,6 @@ class SumoCase:
         rejected_uploads = []
         files_to_upload = [f for f in self.files]
 
-        attempts = 0
         _t0 = time.perf_counter()
 
         logger.debug("files_to_upload: %s", files_to_upload)
@@ -112,7 +77,8 @@ class SumoCase:
         failed_uploads = upload_results.get("failed_uploads")
 
         if failed_uploads:
-            warnings.warn("Stopping after {} attempts".format(attempts))
+            if any([res.get("metadata_upload_response_status_code") == 404 for res in failed_uploads]):
+                warnings.warn("Case is not registered on Sumo")
 
         _dt = time.perf_counter() - _t0
 
