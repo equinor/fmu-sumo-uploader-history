@@ -9,7 +9,7 @@
 --     SUMO_ENV: The environment to upload to
 --     CONFIG_PATH: The path to global_variables.yml
 
-DEFAULT <CONFIG_PATH> fmuconfig/output/global_variables.yml
+DEFAULT <SUMO_CONFIG_PATH> fmuconfig/output/global_variables.yml
 
 STDERR    sumo_upload.stderr
 STDOUT    sumo_upload.stdout
@@ -17,7 +17,7 @@ STDOUT    sumo_upload.stdout
 EXECUTABLE  sumo_upload
 
 
-ARGLIST <SUMO_CASEPATH> <SEARCHPATH> <SUMO_ENV> "--config_path" <CONFIG_PATH>
+ARGLIST <SUMO_CASEPATH> <SEARCHPATH> <SUMO_ENV> "--config_path" <SUMO_CONFIG_PATH>
 
 MIN_ARG    2
 MAX_ARG    5
