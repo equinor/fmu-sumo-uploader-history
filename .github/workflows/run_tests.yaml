@@ -36,7 +36,7 @@ jobs:
       - name: Install fmu-sumo-uploader
         run: >
           python -m pip install --upgrade pip &&
-          python -m pip install .
+          python -m pip install .[test]
       - name: Run tests
         shell: bash
         run: |
@@ -49,5 +49,4 @@ jobs:
           access_token=$(az account get-access-token --scope api://88d2b022-3539-4dda-9e66-853801334a86/.default --query accessToken --output tsv)
           export ACCESS_TOKEN=$access_token
 
-          pip install -r pytest>=6.1.1 pytest-timeout
           pytest -s --timeout=300
