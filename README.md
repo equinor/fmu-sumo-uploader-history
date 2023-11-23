@@ -69,3 +69,8 @@ Example: Installing uploader from `mybranch` on top of Komodo bleeding
 pip install git+https://github.com/equinor/fmu-sumo-uploader.git@mybranch
 pip install git+https://github.com/equinor/fmu-sumo-sim2sumo.git
 ```
+
+The [Explorer](https://github.com/equinor/fmu-sumo) is also installed under `fmu/sumo`. Meaning that if the testing scenario includes the Explorer then it should also be installed on top of Komodo.
+```
+pip install git+https://github.com/equinor/fmu-sumo.git
+```
