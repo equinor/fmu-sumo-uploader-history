@@ -35,8 +35,8 @@ platforms = ["any"]
 where = ["src"]
 
 [project.scripts]
-sumo_upload = "src.fmu.sumo.uploader.scripts.sumo_upload:main"
+sumo_upload = "fmu.sumo.uploader.scripts.sumo_upload:main"
 
 [project.entry-points.ert]
-fmu_sumo_uploader_jobs = "src.fmu.sumo.uploader.hook_implementations.jobs"
-sumo_upload = "src.fmu.sumo.uploader.scripts.sumo_upload"
+fmu_sumo_uploader_jobs = "fmu.sumo.uploader.hook_implementations.jobs"
+sumo_upload = "fmu.sumo.uploader.scripts.sumo_upload"
