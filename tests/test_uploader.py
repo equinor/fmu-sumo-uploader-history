@@ -151,6 +151,45 @@ def test_case(token):
     path = f"/objects('{e.sumo_parent_id}')"
     sumo_connection.api.delete(path=path)
 
+def test_case_with_restricted_child(token, unique_uuid):
+    """Assert that uploading a child with 'classification: restricted' works. 
+    Assumes that the identity running this test have enough rights for that. """
+    sumo_connection = uploader.SumoConnection(env=ENV, token=token)
+
+    _remove_cached_case_id()
+
+    logger.debug("initialize CaseOnDisk")
+
+    case_file = "tests/data/test_case_080/case.yml"
+    _update_metadata_file_with_unique_uuid(case_file, unique_uuid)
+    e = uploader.CaseOnDisk(
+        case_metadata_path=case_file,
+        sumo_connection=sumo_connection,
+    )
+
+    # Register the case
+    e.register()
+    time.sleep(1)
+
+    child_binary_file = "tests/data/test_case_080/surface_restricted.bin"
+    child_metadata_file = "tests/data/test_case_080/.surface_restricted.bin.yml"
+    _update_metadata_file_with_unique_uuid(child_metadata_file, unique_uuid)
+    e.add_files(child_binary_file)
+    e.upload()
+    time.sleep(1)
+
+    query = f"{e.fmu_case_uuid}"
+    search_results = sumo_connection.api.get(
+        "/search", {"$query": query, "$size": 100}
+    ).json()
+    total = search_results.get("hits").get("total").get("value")
+    assert total == 2
+
+    # Delete this case
+    logger.debug("Cleanup after test: delete case")
+    path = f"/objects('{e.sumo_parent_id}')"
+    sumo_connection.api.delete(path=path)
+
 
 def test_one_file(token, unique_uuid):
     """Upload one file to Sumo. Assert that it is there."""
