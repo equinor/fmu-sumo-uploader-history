@@ -24,7 +24,7 @@ dependencies = [
 
 [project.optional-dependencies]
 dev = ["black", "flake8", "pytest"]
-test = ["pytest", "pytest-timeout"]
+test = ["pytest", "pytest-timeout", "fmu-sumo"]
 
 [tool.setuptools]
 package-dir = { "" = "src" }
