@@ -7,6 +7,7 @@ import os
 import argparse
 import logging
 from pathlib import Path
+import traceback
 
 try:
     from ert.shared.plugins.plugin_manager import hook_implementation  # type: ignore
@@ -26,7 +27,7 @@ except ModuleNotFoundError:
 from fmu.sumo import uploader
 
 logger = logging.getLogger(__name__)
-logger.setLevel(logging.CRITICAL)
+logger.setLevel(logging.DEBUG)
 
 # This documentation is for sumo_uploader as an ERT workflow
 DESCRIPTION = """SUMO_UPLOAD will upload files to Sumo. The typical use case is as add-on to 
@@ -122,6 +123,7 @@ def sumo_upload_main(
     except Exception as err:
         logger.info("Problem related to Sumo upload: " f"{err}")
         warnings.warn("Problem related to Sumo upload: " f"{err}")
+        traceback.print_exc()
         _sumo_logger = sumo_connection.api.getLogger(
             "log_2_server_sumo_upload"
         )
