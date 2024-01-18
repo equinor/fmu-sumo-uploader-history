@@ -74,3 +74,6 @@ The [Explorer](https://github.com/equinor/fmu-sumo) is also installed under `fmu
 ```
 pip install git+https://github.com/equinor/fmu-sumo.git
 ```
+
+# Contributing
+Want to contribute? Read our [contributing](./CONTRIBUTING.md) guidelines
