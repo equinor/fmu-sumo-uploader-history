@@ -7,7 +7,6 @@ import os
 import argparse
 import logging
 from pathlib import Path
-import traceback
 
 try:
     from ert.shared.plugins.plugin_manager import hook_implementation  # type: ignore
