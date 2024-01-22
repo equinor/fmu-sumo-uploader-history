@@ -16,7 +16,7 @@ import traceback
 # pylint: disable=C0103 # allow non-snake case variable names
 
 logger = logging.getLogger(__name__)
-logger.setLevel(logging.DEBUG)
+logger.setLevel(logging.CRITICAL)
 
 
 def _get_segyimport_cmdstr(blob_url, object_id, file_path, sample_unit):
@@ -90,7 +90,7 @@ class SumoFile:
         return response
 
     def _delete_metadata(self, sumo_connection, object_id):
-        logger.info("Maverick: Deleting metadata object", object_id)
+        logger.info("Deleting metadata object", object_id)
         path = f"/objects('{object_id}')"
         response = sumo_connection.api.delete(path=path)
         return response
@@ -136,8 +136,7 @@ class SumoFile:
             )
             pass
         except (httpx.TimeoutException, httpx.ConnectError) as err:
-            print("Maverick: upload_to_sumo metadata timeout or connection exc", err)
-            traceback.print_exc()
+            logger.warning("upload_to_sumo metadata timeout or connection exception", err, type(err))
             result.update(
                 {
                     "status": "failed",
@@ -147,8 +146,7 @@ class SumoFile:
             )
             pass
         except httpx.HTTPStatusError as err:
-            print("Maverick: upload_to_sumo metadata statuserror exc", err)
-            traceback.print_exc()
+            logger.warning("upload_to_sumo metadata statuserror exception", err, type(err))
             result.update(
                 {
                     "status": "failed",
@@ -158,8 +156,7 @@ class SumoFile:
             )
             pass
         except Exception as err:
-            print("Maverick: upload_to_sumo metadata exception exc", err)
-            traceback.print_exc()
+            logger.warning("upload_to_sumo metadata exception exception", err, type(err))
             result.update(
                 {
                     "status": "failed",
@@ -170,7 +167,7 @@ class SumoFile:
             pass
 
         if result["metadata_upload_response_status_code"] not in [200, 201]:
-            print("Maverick: upload_to_sumo metadata upload not in 200, 201, returning", result["metadata_upload_response_status_code"])
+            logger.warning("upload_to_sumo metadata upload not in 200, 201, returning", result["metadata_upload_response_status_code"])
             return result
 
         self.sumo_parent_id = sumo_parent_id
@@ -215,7 +212,7 @@ class SumoFile:
                         )
                     else:
                         # Outer code expects and interprets http error codes
-                        print("Maverick: upload_to_sumo seismic blob failed with returncode", cmd_result.returncode)
+                        logger.warning("upload_to_sumo seismic blob failed with returncode", cmd_result.returncode)
                         upload_response.update(
                             {
                                 "status_code": 418,
@@ -226,8 +223,7 @@ class SumoFile:
                         pass
                     pass
                 except Exception as err:
-                    print("Maverick: upload_to_sumo blob seismic exc", err)
-                    traceback.print_exc()
+                    logger.warning("upload_to_sumo blob seismic exception", err, type(err))
                     upload_response.update(
                         {
                             "status_code": 418,
@@ -246,9 +242,7 @@ class SumoFile:
                 )
                 pass
             except (httpx.TimeoutException, httpx.ConnectError) as err:
-                print(f"Maverick: upload_to_sumo blob Upload failed x {err=}, {type(err)=}")
-                traceback.print_exc()
-                logger.info(err)
+                logger.warning("upload_to_sumo blob upload failed on timeout or connect", err, type(err))
                 upload_response.update(
                     {
                         "status": "failed",
@@ -258,9 +252,7 @@ class SumoFile:
                 )
                 pass
             except httpx.HTTPStatusError as err:
-                print(f"Maverick: upload_to_sumo blob Upload failed x {err=}, {type(err)=}")
-                traceback.print_exc()
-                logger.info(err)
+                logger.warning("upload_to_sumo blob upload failed on status",err, type(err)")
                 upload_response.update(
                     {
                         "status": "failed",
@@ -270,10 +262,7 @@ class SumoFile:
                 )
                 pass
             except Exception as err:
-                print(f"Maverick: upload_to_sumo exception Upload blob failed z {err=}, {type(err)=}")
-                traceback.print_exc()
-                logger.info(err)
-
+                logger.warning("upload_to_sumo upload blob failed on exception", err, type(err)")
 
         _t1_blob = time.perf_counter()
 
@@ -290,7 +279,7 @@ class SumoFile:
         if "status_code" not in upload_response or upload_response[
             "status_code"
         ] not in [200, 201]:
-            logger.info("Maverick: Upload failed: %s", upload_response["text"], self.sumo_object_id)
+            logger.warning("Deleting metadata since upload failed on object uuid", self.sumo_object_id)
             result["status"] = "failed"
             self._delete_metadata(sumo_connection, self.sumo_object_id)
         else:

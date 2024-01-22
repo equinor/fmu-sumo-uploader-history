@@ -15,7 +15,7 @@ from fmu.sumo.uploader._sumofile import SumoFile
 # pylint: disable=C0103 # allow non-snake case variable names
 
 logger = logging.getLogger(__name__)
-logger.setLevel(logging.DEBUG)
+logger.setLevel(logging.CRITICAL)
 
 class FileOnJob(SumoFile):
     def __init__(self, byte_string: str, metadata):

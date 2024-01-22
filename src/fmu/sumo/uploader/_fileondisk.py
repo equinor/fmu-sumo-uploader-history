@@ -18,7 +18,7 @@ from fmu.sumo.uploader._sumofile import SumoFile
 # pylint: disable=C0103 # allow non-snake case variable names
 
 logger = logging.getLogger(__name__)
-logger.setLevel(logging.DEBUG)
+logger.setLevel(logging.CRITICAL)
 
 
 def path_to_yaml_path(path):
