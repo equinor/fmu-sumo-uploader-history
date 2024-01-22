@@ -274,7 +274,7 @@ class SumoFile:
                 upload_response.update(
                     {
                         "status": "failed",
-                        "status_code": 500,
+                        "status_code": err.response.status_code,
                         "text": str(err),
                         "blob_upload_response_status_code": err.response.status_code,
                         "blob_upload_response_text": err.response.reason_phrase,
