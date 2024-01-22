@@ -15,7 +15,7 @@ import httpx
 # pylint: disable=C0103 # allow non-snake case variable names
 
 logger = logging.getLogger(__name__)
-logger.setLevel(logging.CRITICAL)
+logger.setLevel(logging.WARNING)
 
 
 def _get_segyimport_cmdstr(blob_url, object_id, file_path, sample_unit):
@@ -89,6 +89,7 @@ class SumoFile:
         return response
 
     def _delete_metadata(self, sumo_connection, object_id):
+        logger.warn("Deleting metadata object", object_id)
         path = f"/objects('{object_id}')"
         response = sumo_connection.api.delete(path=path)
         return response
@@ -127,13 +128,17 @@ class SumoFile:
                     "metadata_upload_response_text": response.text,
                     "metadata_upload_time_start": _t0_metadata,
                     "metadata_upload_time_end": _t1_metadata,
-                    "metadata_upload_time_elapsed": _t1_metadata - _t0_metadata,
+                    "metadata_upload_time_elapsed": _t1_metadata
+                    - _t0_metadata,
                     "metadata_file_path": self.metadata_path,
                     "metadata_file_size": self._size,
                 }
             )
             pass
         except (httpx.TimeoutException, httpx.ConnectError) as err:
+            logger.warn(
+                f"Metadata upload timeout/connection exception {err} {type(err)}"
+            )
             result.update(
                 {
                     "status": "failed",
@@ -143,6 +148,9 @@ class SumoFile:
             )
             pass
         except httpx.HTTPStatusError as err:
+            logger.warn(
+                f"Metadata upload statuserror exception {err} {type(err)}"
+            )
             result.update(
                 {
                     "status": "failed",
@@ -151,8 +159,22 @@ class SumoFile:
                 }
             )
             pass
+        except Exception as err:
+            logger.warn(f"Metadata upload exception {err} {type(err)}")
+            result.update(
+                {
+                    "status": "failed",
+                    "metadata_upload_response_status_code": 500,
+                    "metadata_upload_response_text": str(err),
+                }
+            )
+            pass
 
         if result["metadata_upload_response_status_code"] not in [200, 201]:
+            logger.warn(
+                "Metadata upload unsuccessful, returning " +
+                str(result["metadata_upload_response_status_code"])
+            )
             return result
 
         self.sumo_parent_id = sumo_parent_id
@@ -197,24 +219,29 @@ class SumoFile:
                         )
                     else:
                         # Outer code expects and interprets http error codes
+                        logger.warn(
+                            "Seismic upload failed with returncode",
+                            cmd_result.returncode,
+                        )
                         upload_response.update(
                             {
                                 "status_code": 418,
-                                "text": "FAILED SEGY upload as OpenVDS. "
+                                "text": "FAILED SEGY upload as OpenVDS command "
                                 + cmd_result.stderr,
                             }
                         )
                         pass
                     pass
-
-                except OSError as err:
+                except Exception as err:
+                    logger.warn(f"Seismic upload exception {err} {type(err)}")
                     upload_response.update(
                         {
                             "status_code": 418,
-                            "text": "FAILED SEGY upload as OpenVDS. " + str(err),
+                            "text": "FAILED SEGY upload as OpenVDS "
+                            + str(err) + " " + str(type(err)),
                         }
                     )
-        else:
+        else:  # non-seismic blob
             try:
                 response = self._upload_byte_string(
                     sumo_connection=sumo_connection,
@@ -222,33 +249,59 @@ class SumoFile:
                     blob_url=blob_url,
                 )
                 upload_response.update(
-                    {"status_code": response.status_code, "text": response.text}
+                    {
+                        "status_code": response.status_code,
+                        "text": response.text,
+                    }
                 )
                 pass
             except (httpx.TimeoutException, httpx.ConnectError) as err:
+                logger.warn(
+                    f"Blob upload failed on timeout/connect {err} {type(err)}"
+                )
                 upload_response.update(
                     {
                         "status": "failed",
+                        "status_code": 500,
+                        "text": str(err),
                         "blob_upload_response_status_code": 500,
                         "blob_upload_response_text": str(err),
                     }
                 )
                 pass
             except httpx.HTTPStatusError as err:
+                logger.warn(f"Blob upload failed on status {err} {type(err)}")
                 upload_response.update(
                     {
                         "status": "failed",
+                        "status_code": err.response.status_code,
+                        "text": str(err),
                         "blob_upload_response_status_code": err.response.status_code,
                         "blob_upload_response_text": err.response.reason_phrase,
                     }
                 )
                 pass
+            except Exception as err:
+                logger.warn(
+                    f"Blob upload failed on exception {err} {type(err)}"
+                )
+                upload_response.update(
+                    {
+                        "status": "failed",
+                        "status_code": 500,
+                        "text": str(err),
+                        "blob_upload_response_status_code": 500,
+                        "blob_upload_response_text": str(err),
+                    }
+                )
 
         _t1_blob = time.perf_counter()
 
         result.update(
             {
-                "blob_upload_response_status_code": upload_response["status_code"],
+                "blob_upload_response_status_code": upload_response[
+                    "status_code"
+                ],
                 "blob_upload_response_status_text": upload_response["text"],
                 "blob_upload_time_start": _t0_blob,
                 "blob_upload_time_end": _t1_blob,
@@ -259,7 +312,10 @@ class SumoFile:
         if "status_code" not in upload_response or upload_response[
             "status_code"
         ] not in [200, 201]:
-            logger.debug("Upload failed: %s", upload_response["text"])
+            logger.warn(
+                "Deleting metadata since data-upload failed on object uuid "
+                + self.sumo_object_id
+            )
             result["status"] = "failed"
             self._delete_metadata(sumo_connection, self.sumo_object_id)
         else:
