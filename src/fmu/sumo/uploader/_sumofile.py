@@ -89,7 +89,7 @@ class SumoFile:
         return response
 
     def _delete_metadata(self, sumo_connection, object_id):
-        logger.info("Deleting metadata object", object_id)
+        logger.warn("Deleting metadata object", object_id)
         path = f"/objects('{object_id}')"
         response = sumo_connection.api.delete(path=path)
         return response
@@ -171,7 +171,7 @@ class SumoFile:
             pass
 
         if result["metadata_upload_response_status_code"] not in [200, 201]:
-            logger.info(
+            logger.warn(
                 "Metadata upload unsuccessful, returning",
                 result["metadata_upload_response_status_code"],
             )
