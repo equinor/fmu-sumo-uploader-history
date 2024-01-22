@@ -145,6 +145,10 @@ class CaseOnDisk(SumoCase):
         print(f"CONFIG_PATH: {glob_var_path}")
 
         fmu_id = self.fmu_case_uuid
+        if not "realization" in self.files[0].metadata["fmu"].keys():
+            logger.info("Cannot upload parameters.txt due to no realization")
+            return
+        
         realization_id = self.files[0].metadata["fmu"]["realization"]["uuid"]
         query = f"fmu.case.uuid:{fmu_id} AND fmu.realization.uuid:{realization_id} AND data.content:parameters"
 
