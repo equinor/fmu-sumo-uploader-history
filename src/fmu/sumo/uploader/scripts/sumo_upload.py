@@ -112,7 +112,7 @@ def sumo_upload_main(
         e.upload_parameters_txt(glob_var_path=config_path)
         logger.info("Upload done")
     except Exception as err:
-        logger.warning("Problem related to Sumo upload:", err, type(err))
+        logger.warning(f"Problem related to Sumo upload: {err} {type(err)}")
         _sumo_logger = sumo_connection.api.getLogger(
             "log_2_server_sumo_upload"
         )
