@@ -149,7 +149,7 @@ class SumoFile:
             pass
         except httpx.HTTPStatusError as err:
             logger.warn(
-                f"Metadata upload statuserror exception {err} {type(err)}"
+                f"Metadata upload statuserror exception {err} {type(err)} {err.response.text}"
             )
             result.update(
                 {
@@ -270,7 +270,7 @@ class SumoFile:
                 )
                 pass
             except httpx.HTTPStatusError as err:
-                logger.warn(f"Blob upload failed on status {err} {type(err)}")
+                logger.warn(f"Blob upload failed on status {err} {type(err)} {err.response.text}")
                 upload_response.update(
                     {
                         "status": "failed",
