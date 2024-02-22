@@ -1,0 +1,34 @@
+# Build the docs here, to show errors. 
+# The actual deployment of docs is configured in ReadTheDocs.org. 
+
+name: Build and deploy docs 
+
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
+
+jobs:
+  build_pywheels:
+    name: Build docs with Python ${{ matrix.python-version }} on ${{ matrix.os }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        python-version: ["3.10"]
+        os: [ubuntu-latest]
+
+    steps:
+      - uses: actions/checkout@v1
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: ${{ matrix.python-version }}
+
+      - name: Install and build docs
+        run: |
+          pip install pip -U && pip install wheel -U
+          pip install .[docs]
+          pip list
+          sphinx-build docs build/sphinx/html

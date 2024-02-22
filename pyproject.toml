@@ -26,6 +26,14 @@ dependencies = [
 dev = ["black", "flake8", "pytest"]
 test = ["pytest", "pytest-timeout", "fmu-sumo"]
 
+docs = [
+  "sphinx==6.2.1",
+  "sphinx-rtd-theme",
+  "autoapi",
+  "sphinx-autodoc-typehints",
+  "sphinxcontrib-apidoc",
+]
+
 [tool.setuptools]
 package-dir = { "" = "src" }
 include-package-data = true
