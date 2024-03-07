@@ -191,14 +191,32 @@ class CaseOnDisk(SumoCase):
             sumo_parent_id (uuid4): Unique ID for this case on Sumo
         """
 
-        logger.info("Registering case on Sumo")
+        logger.info("About to register case on Sumo")
 
-        sumo_parent_id = self._upload_case_metadata(self.case_metadata)
-        self._sumo_parent_id = sumo_parent_id
+        try: 
+            sumo_parent_id = self._upload_case_metadata(self.case_metadata)
+            self._sumo_parent_id = sumo_parent_id
 
-        logger.info("Case registered. SumoID: {}".format(sumo_parent_id))
+            logger.info("Case registered. SumoID: {}".format(sumo_parent_id))
 
-        return sumo_parent_id
+            return sumo_parent_id
+        except Exception as err:
+            print("\n\033[31m"
+                "Error during registering case on Sumo. "
+                "\nFile uploads will also fail. "
+                "\033[0m")
+            if '401 Unauthorized' in str(err):
+                print("\033[31m"
+                    "Did you login to Sumo?"
+                     " \033[0m")
+            elif '403 Forbidden' in str(err):
+                print("\033[31m"
+                      "Do you have write access to the asset?"
+                      "\033[0m")
+            print(f"Error details: {err} {type(err)}")
+            logger.warning(f"Error during registering case on Sumo: {err} {type(err)}")
+            return "0"
+ 
 
     def _upload_case_metadata(self, case_metadata: dict):
         """Upload case metadata to Sumo."""
