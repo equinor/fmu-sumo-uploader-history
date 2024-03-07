@@ -211,7 +211,7 @@ class CaseOnDisk(SumoCase):
                      " \033[0m")
             elif '403 Forbidden' in str(err):
                 print("\033[31m"
-                      "Do you have write access to the asset?"
+                      "Do you have write access to the Sumo asset?"
                       "\033[0m")
             print(f"Error details: {err} {type(err)}")
             logger.warning(f"Error during registering case on Sumo: {err} {type(err)}")
