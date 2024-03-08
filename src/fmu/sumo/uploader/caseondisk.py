@@ -148,7 +148,7 @@ class CaseOnDisk(SumoCase):
         if not "realization" in self.files[0].metadata["fmu"].keys():
             logger.info("Cannot upload parameters.txt due to no realization")
             return
-        
+
         realization_id = self.files[0].metadata["fmu"]["realization"]["uuid"]
         query = f"fmu.case.uuid:{fmu_id} AND fmu.realization.uuid:{realization_id} AND data.content:parameters"
 
@@ -193,7 +193,7 @@ class CaseOnDisk(SumoCase):
 
         logger.info("About to register case on Sumo")
 
-        try: 
+        try:
             sumo_parent_id = self._upload_case_metadata(self.case_metadata)
             self._sumo_parent_id = sumo_parent_id
 
@@ -201,22 +201,33 @@ class CaseOnDisk(SumoCase):
 
             return sumo_parent_id
         except Exception as err:
-            print("\n\033[31m"
+            print(
+                "\n\033[31m"
                 "Error during registering case on Sumo. "
                 "\nFile uploads will also fail. "
-                "\033[0m")
-            if '401 Unauthorized' in str(err):
-                print("\033[31m"
-                    "Did you login to Sumo?"
-                     " \033[0m")
-            elif '403 Forbidden' in str(err):
-                print("\033[31m"
-                      "Do you have write access to the Sumo asset?"
-                      "\033[0m")
-            print(f"Error details: {err} {type(err)}")
-            logger.warning(f"Error during registering case on Sumo: {err} {type(err)}")
+                "\033[0m"
+            )
+            if "401 Unauthorized" in str(err):
+                print(
+                    "\033[31m"
+                    "Please verify that you are logged in to Sumo, "
+                    "by running sumo_login in a Unix terminal window"
+                    " \033[0m"
+                )
+            elif "403 Forbidden" in str(err):
+                print(
+                    "\033[31m"
+                    "Please verify that you have write access"
+                    " to Sumo (AccessIT)"
+                    "\033[0m"
+                )
+            print(
+                f"Error details: {err} {type(err)} Case metadata file path: {self._case_metadata_path}"
+            )
+            logger.warning(
+                f"Error during registering case on Sumo: {err} {type(err)}"
+            )
             return "0"
- 
 
     def _upload_case_metadata(self, case_metadata: dict):
         """Upload case metadata to Sumo."""
