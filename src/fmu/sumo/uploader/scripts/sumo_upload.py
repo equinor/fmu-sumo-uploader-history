@@ -21,23 +21,51 @@ logger = logging.getLogger(__name__)
 logger.setLevel(logging.WARNING)
 
 # This documentation is for sumo_uploader as an ERT workflow
-DESCRIPTION = """SUMO_UPLOAD will upload files to Sumo. The typical use case is as add-on to
-post-processing workflows which aggregate data across an ensemble and stores the
-results outside the realization folders.
+DESCRIPTION = """SUMO_UPLOAD will upload files to Sumo. The typical use case
+is as add-on to post-processing workflows which aggregate data across an 
+ensemble and stores the results outside the realization folders. 
+
+SUMO_UPLOAD depends on the current case being registered in Sumo (done through 
+the ``WF_CREATE_CASE_METADATA`` workflow) and on data being exported 
+with ``fmu-dataio``. 
+
+``fmu-dataio`` must be used to produce metadata for each file 
+to be uploaded to Sumo. 
+
+The ``WF_CREATE_CASE_METADATA`` workflow must run *before* all SUMO_UPLOAD 
+instances to ensure the case metadata is registered in Sumo before the files 
+are uploaded. 
 
 SUMO_UPLOAD is implemented both as FORWARD_JOB and WORKFLOW_JOB and can be called from
-both contexts when running ERT."""
+both contexts when running ERT.
 
-EXAMPLES = """In an existing workflow e.g. ert/bin/workflows/MY_WORKFLOW with the contents
+It is recommended to upload files after they are produced, instead of lumping all your 
+SUMO_UPLOADs in the end. 
+    
+"""
 
-MY_JOB <arguments>
-SUMO_UPLOAD <CASEPATH> <CASEPATH>/MyIteration/share/results/tables/*.csv <SUMO_ENV>
+EXAMPLES = """``<SUMO_ENV>`` must be defined. It is typically defined in the ERT config, 
+and normally set to ``prod``.
 
-where ``MY_JOB`` typically refers to a post-processing job creating data
-and where <CASEPATH> typically refers to <SCRATCH>/<USER>/<CASE>
+``<SUMO_CASEPATH>`` must be defined. It is typically defined in the ERT config, 
+and normally set to ``<SCRATCH>/<USER>/<CASE_DIR>`` 
+e.g. ``/scratch/myfield/myuser/mycase/``
 
-<SUMO_ENV> is typically set in the config as it is used also by forward jobs.
-It must refer to a valid Sumo environment. Normally this should be set to prod."""
+Note! Filenames produced by FMU workflows use "--" as separator. Avoid this 
+string in searchpaths, as it will cause following text to be parsed as a comment.
+
+FORWARD_MODEL example::
+
+  FORWARD_MODEL XX -- Some other job that makes data
+  FORWARD_MODEL SUMO_UPLOAD(<SEARCHPATH>="share/results/maps/*.gri")
+  FORWARD_MODEL SUMO_UPLOAD(<SEARCHPATH>="share/results/polygons/*.csv")
+
+WORKFLOW_JOB example::
+
+  <MY_JOB> -- The workflow job that creates data
+  SUMO_UPLOAD <SUMO_CASEPATH> "<SUMO_CASEPATH>/share/observations/maps/*.gri"  <SUMO_ENV>
+
+"""
 
 
 def main() -> None:
