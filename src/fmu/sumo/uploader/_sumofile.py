@@ -89,7 +89,7 @@ class SumoFile:
         return response
 
     def _delete_metadata(self, sumo_connection, object_id):
-        logger.warn("Deleting metadata object", object_id)
+        logger.warning("Deleting metadata object", object_id)
         path = f"/objects('{object_id}')"
         response = sumo_connection.api.delete(path=path)
         return response
@@ -136,7 +136,7 @@ class SumoFile:
             )
             pass
         except (httpx.TimeoutException, httpx.ConnectError) as err:
-            logger.warn(
+            logger.warning(
                 f"Metadata upload timeout/connection exception {err} {type(err)}"
             )
             result.update(
@@ -148,19 +148,26 @@ class SumoFile:
             )
             pass
         except httpx.HTTPStatusError as err:
-            logger.warn(
-                f"Metadata upload statuserror exception {err} {type(err)} {err.response.text}"
+            error_string = (
+                str(err.response.status_code)
+                + err.response.reason_phrase
+                + err.response.text
+            )
+            logger.warning(
+                f"Metadata upload statuserror exception: {error_string}"
             )
             result.update(
                 {
-                    "status": "failed",
+                    "status": "rejected",
                     "metadata_upload_response_status_code": err.response.status_code,
-                    "metadata_upload_response_text": err.response.reason_phrase,
+                    "metadata_upload_response_text": error_string[
+                        : min(250, len(error_string))
+                    ],
                 }
             )
             pass
         except Exception as err:
-            logger.warn(f"Metadata upload exception {err} {type(err)}")
+            logger.warning(f"Metadata upload exception {err} {type(err)}")
             result.update(
                 {
                     "status": "failed",
@@ -171,9 +178,9 @@ class SumoFile:
             pass
 
         if result["metadata_upload_response_status_code"] not in [200, 201]:
-            logger.warn(
-                "Metadata upload unsuccessful, returning " +
-                str(result["metadata_upload_response_status_code"])
+            logger.warning(
+                "Metadata upload unsuccessful, returning "
+                + str(result["metadata_upload_response_status_code"])
             )
             return result
 
@@ -219,7 +226,7 @@ class SumoFile:
                         )
                     else:
                         # Outer code expects and interprets http error codes
-                        logger.warn(
+                        logger.warning(
                             "Seismic upload failed with returncode",
                             cmd_result.returncode,
                         )
@@ -233,12 +240,14 @@ class SumoFile:
                         pass
                     pass
                 except Exception as err:
-                    logger.warn(f"Seismic upload exception {err} {type(err)}")
+                    logger.warning(f"Seismic upload exception {err} {type(err)}")
                     upload_response.update(
                         {
                             "status_code": 418,
                             "text": "FAILED SEGY upload as OpenVDS "
-                            + str(err) + " " + str(type(err)),
+                            + str(err)
+                            + " "
+                            + str(type(err)),
                         }
                     )
         else:  # non-seismic blob
@@ -256,7 +265,7 @@ class SumoFile:
                 )
                 pass
             except (httpx.TimeoutException, httpx.ConnectError) as err:
-                logger.warn(
+                logger.warning(
                     f"Blob upload failed on timeout/connect {err} {type(err)}"
                 )
                 upload_response.update(
@@ -270,7 +279,9 @@ class SumoFile:
                 )
                 pass
             except httpx.HTTPStatusError as err:
-                logger.warn(f"Blob upload failed on status {err} {type(err)} {err.response.text}")
+                logger.warning(
+                    f"Blob upload failed on status {err} {type(err)} {err.response.text}"
+                )
                 upload_response.update(
                     {
                         "status": "failed",
@@ -282,7 +293,7 @@ class SumoFile:
                 )
                 pass
             except Exception as err:
-                logger.warn(
+                logger.warning(
                     f"Blob upload failed on exception {err} {type(err)}"
                 )
                 upload_response.update(
@@ -312,7 +323,7 @@ class SumoFile:
         if "status_code" not in upload_response or upload_response[
             "status_code"
         ] not in [200, 201]:
-            logger.warn(
+            logger.warning(
                 "Deleting metadata since data-upload failed on object uuid "
                 + self.sumo_object_id
             )

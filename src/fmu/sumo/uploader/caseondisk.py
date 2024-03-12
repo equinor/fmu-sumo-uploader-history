@@ -5,6 +5,7 @@ from pathlib import Path
 import glob
 import logging
 import warnings
+import httpx
 
 import yaml
 import json
@@ -207,26 +208,26 @@ class CaseOnDisk(SumoCase):
                 "\nFile uploads will also fail. "
                 "\033[0m"
             )
-            if "401 Unauthorized" in str(err):
-                print(
-                    "\033[31m"
-                    "Please verify that you are logged in to Sumo, "
-                    "by running sumo_login in a Unix terminal window"
-                    " \033[0m"
-                )
-            elif "403 Forbidden" in str(err):
-                print(
-                    "\033[31m"
-                    "Please verify that you have write access"
-                    " to Sumo (AccessIT)"
-                    "\033[0m"
-                )
-            print(
-                f"Error details: {err} {type(err)} Case metadata file path: {self._case_metadata_path}"
-            )
-            logger.warning(
-                f"Error during registering case on Sumo: {err} {type(err)}"
-            )
+            error_string = f"Error details: {err} {type(err)}"
+            if isinstance(err, httpx.HTTPStatusError):
+                if err.response.status_code == 401:
+                    print(
+                        "\033[31m"
+                        "Please verify that you are logged in to Sumo, "
+                        "by running sumo_login in a Unix terminal window"
+                        " \033[0m"
+                    )
+                if err.response.status_code == 403:
+                    print(
+                        "\033[31m"
+                        "Please verify that you have write access"
+                        " to Sumo (AccessIT)"
+                        "\033[0m"
+                    )
+                error_string = f"{error_string} {err.response.text}"
+            error_string = f"{error_string} Case metadata file path: {self._case_metadata_path}"
+            print(error_string)
+            logger.warning(error_string)
             return "0"
 
     def _upload_case_metadata(self, case_metadata: dict):

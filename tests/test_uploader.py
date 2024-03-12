@@ -466,11 +466,12 @@ def test_seismic_openvds_file(token, unique_uuid):
                 assert os.stat(exported_filepath).st_size == os.stat(segy_filepath).st_size
                 if os.path.exists(exported_filepath):
                     os.remove(exported_filepath)
-                print("SEGYExport succeded on retry", export_retries)
+                print("SEGYExport succeeded on retry", export_retries)
                 export_succeeded = True
+            else:
+                time.sleep(16)
 
             export_retries+=1
-            time.sleep(60)
 
         assert export_succeeded
 
