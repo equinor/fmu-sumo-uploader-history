@@ -18,6 +18,7 @@ dynamic = ["version"]
 dependencies = [
     "sumo-wrapper-python>=1.0.3",
     "fmu-dataio",
+    "httpx>=0.24.1",
     "openvds; sys_platform != 'darwin'",
     "ert; sys_platform != 'win32'",
 ]

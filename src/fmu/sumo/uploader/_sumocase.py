@@ -36,11 +36,14 @@ class SumoCase:
 
     def _get_fmu_case_uuid(self):
         """Return case_id from case_metadata."""
-
-        fmu_case_uuid = self.case_metadata.get("fmu").get("case").get("uuid")
-
+        fmu_case_uuid = None
+        if self.case_metadata.get("fmu"):
+            if self.case_metadata.get("fmu").get("case"):
+                fmu_case_uuid = (
+                    self.case_metadata.get("fmu").get("case").get("uuid")
+                )
         if not fmu_case_uuid:
-            raise ValueError("Could not get fmu_case_uuid from case metadata")
+            raise ValueError("Could not get fmu.case.uuid from case metadata")
 
         return fmu_case_uuid
 
@@ -51,7 +54,6 @@ class SumoCase:
         ones that have failed and the ones that have been rejected.
 
         Retry the failed uploads X times."""
-
 
         if not self.files:
             raise FileExistsError("No files to upload. Check search string.")
@@ -76,8 +78,13 @@ class SumoCase:
         rejected_uploads += upload_results.get("rejected_uploads")
         failed_uploads = upload_results.get("failed_uploads")
 
-        if failed_uploads:
-            if any([res.get("metadata_upload_response_status_code") == 404 for res in failed_uploads]):
+        if rejected_uploads:
+            if any(
+                [
+                    res.get("metadata_upload_response_status_code") in [400, 404]
+                    for res in rejected_uploads
+                ]
+            ):
                 warnings.warn("Case is not registered on Sumo")
                 logger.info(
                     "Case was not found on Sumo. If you are in the FMU context "
@@ -139,7 +146,7 @@ class SumoCase:
         logger.info("OK: %s", str(len(ok_uploads)))
         logger.info("Failed: %s", str(len(failed_uploads)))
         logger.info("Rejected: %s", str(len(rejected_uploads)))
-        logger.info("Wall time: %s sec", str(_dt))
+        logger.info(f"Wall time: {_dt:.2f} sec")
 
         summary = {
             "upload_summary": {
