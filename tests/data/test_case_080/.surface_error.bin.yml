@@ -142,7 +142,7 @@ access:
   ssdl:
     access_level: internal
     rep_include: true
-masterdata:
+masterdata_INVALID_SCHEMA:
   smda:
     country:
     - identifier: Norway

@@ -132,9 +132,8 @@ class CaseOnDisk(SumoCase):
                 self._files.append(file)
                 logger.info("File appended: %s", file_path)
 
-            except IOError as err:
-                info = f"{err}. No metadata, skipping file."
-                warnings.warn(info)
+            except Exception as err:
+                warnings.warn(f"No metadata, skipping file: {err}")
 
     def upload_parameters_txt(
         self,
@@ -208,7 +207,7 @@ class CaseOnDisk(SumoCase):
                 "\nFile uploads will also fail. "
                 "\033[0m"
             )
-            error_string = f"Error details: {err} {type(err)}"
+            error_string = f"Registering case on Sumo failed: error details: {err} {type(err)}"
             if isinstance(err, httpx.HTTPStatusError):
                 if err.response.status_code == 401:
                     print(
@@ -227,7 +226,7 @@ class CaseOnDisk(SumoCase):
                 error_string = f"{error_string} {err.response.text}"
             error_string = f"{error_string} Case metadata file path: {self._case_metadata_path}"
             print(error_string)
-            logger.warning(error_string)
+            warnings.warn(error_string)
             return "0"
 
     def _upload_case_metadata(self, case_metadata: dict):
@@ -246,14 +245,18 @@ def _load_case_metadata(case_metadata_path: str):
     """Load the case metadata."""
 
     if not os.path.isfile(case_metadata_path):
-        raise IOError(f"case metadata not found: {case_metadata_path}")
+        warnings.warn(
+            f"Invalid metadata: file does not exist {case_metadata_path}"
+        )
+        return {}
 
-    with open(case_metadata_path, "r") as stream:
-        yaml_data = yaml.safe_load(stream)
-
-    logger.debug("Sanitizing datetimes from loaded case metadata")
-
-    return yaml_data
+    try:
+        with open(case_metadata_path, "r") as stream:
+            yaml_data = yaml.safe_load(stream)
+        return yaml_data
+    except Exception as err:
+        warnings.warn(f"Invalid metadata in yml file {case_metadata_path}")
+        return {}
 
 
 def _find_file_paths(search_string):
@@ -262,10 +265,7 @@ def _find_file_paths(search_string):
     files = [f for f in glob.glob(search_string) if os.path.isfile(f)]
 
     if len(files) == 0:
-        info = "No files found! Please, check the search string."
-        warnings.warn(info)
-
-        info = f"Search string: {search_string}"
-        warnings.warn(info)
+        warnings.warn("No files found! Please, check the search string.")
+        warnings.warn(f"Search string: {search_string}")
 
     return files

@@ -10,6 +10,7 @@ import sys
 import time
 import subprocess
 import logging
+import warnings
 import httpx
 
 # pylint: disable=C0103 # allow non-snake case variable names
@@ -99,19 +100,29 @@ class SumoFile:
 
         logger.debug("Starting upload_to_sumo()")
 
+        # We need these included even if returning before blob upload
+        result = {"blob_file_path": self.path, "blob_file_size": self._size}
+
         if not sumo_parent_id:
-            raise ValueError(
-                f"Upload failed, missing sumo_parent_id. Got: {sumo_parent_id}"
+            err_msg = f"File upload cannot be attempted, missing case/sumo_parent_id. Got: {sumo_parent_id}"
+            result.update(
+                {
+                    "status": "rejected",
+                    "metadata_upload_response_status_code": 500,
+                    "metadata_upload_response_text": err_msg,
+                }
             )
+            return result
 
         _t0 = time.perf_counter()
         _t0_metadata = time.perf_counter()
 
-        # We need these included even if returning before blob upload
-        result = {"blob_file_path": self.path, "blob_file_size": self._size}
-
         # Uploader converts segy-files to OpenVDS:
-        if self.metadata["data"]["format"] in ["openvds", "segy"]:
+        if (
+            self.metadata.get("data")
+            and self.metadata.get("data").get("format")
+            and self.metadata.get("data").get("format") in ["openvds", "segy"]
+        ):
             self.metadata["data"]["format"] = "openvds"
             self.metadata["file"]["checksum_md5"] = ""
 
@@ -194,7 +205,11 @@ class SumoFile:
         _t0_blob = time.perf_counter()
         upload_response = {}
 
-        if self.metadata["data"]["format"] in ["openvds", "segy"]:
+        if (
+            self.metadata.get("data")
+            and self.metadata.get("data").get("format")
+            and self.metadata.get("data").get("format") in ["openvds", "segy"]
+        ):
             if sys.platform.startswith("darwin"):
                 # OpenVDS does not support Mac/darwin directly
                 # Outer code expects and interprets http error codes
@@ -240,7 +255,9 @@ class SumoFile:
                         pass
                     pass
                 except Exception as err:
-                    logger.warning(f"Seismic upload exception {err} {type(err)}")
+                    logger.warning(
+                        f"Seismic upload exception {err} {type(err)}"
+                    )
                     upload_response.update(
                         {
                             "status_code": 418,
