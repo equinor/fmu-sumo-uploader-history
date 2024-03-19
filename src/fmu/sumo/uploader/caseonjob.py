@@ -15,7 +15,9 @@ logger.setLevel(logging.CRITICAL)
 class CaseOnJob(SumoCase):
     """Initialize the CaseOnJob object."""
 
-    def __init__(self, case_metadata: str, sumo_connection, verbosity=logging.DEBUG):
+    def __init__(
+        self, case_metadata: str, sumo_connection, verbosity=logging.DEBUG
+    ):
         super().__init__(case_metadata, sumo_connection)
         logger.setLevel(level=verbosity)
 
@@ -37,8 +39,8 @@ class CaseOnJob(SumoCase):
         try:
             file = FileOnJob(byte_string=byte_string, metadata=metadata)
             self._files.append(file)
-        except IOError as err:
-            info = f"{err}. No metadata, skipping file."
+        except Exception as err:
+            info = f"No metadata, skipping file: {err}"
             warnings.warn(info)
 
     def register(self):

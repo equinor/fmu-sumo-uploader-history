@@ -37,15 +37,25 @@ class SumoCase:
     def _get_fmu_case_uuid(self):
         """Return case_id from case_metadata."""
         fmu_case_uuid = None
-        if self.case_metadata.get("fmu"):
-            if self.case_metadata.get("fmu").get("case"):
+        try:
+            if (
+                self.case_metadata
+                and self.case_metadata.get("fmu")
+                and self.case_metadata.get("fmu").get("case")
+            ):
                 fmu_case_uuid = (
                     self.case_metadata.get("fmu").get("case").get("uuid")
                 )
-        if not fmu_case_uuid:
-            raise ValueError("Could not get fmu.case.uuid from case metadata")
-
-        return fmu_case_uuid
+            if not fmu_case_uuid:
+                err_msg = "Invalid metadata: Could not get fmu.case.uuid from case metadata"
+                warnings.warn(err_msg)
+                return None
+            else:
+                return fmu_case_uuid
+        except Exception as err:
+            err_msg = f"Invalid metadata: Could not get fmu.case.uuid from case metadata: {err} {type(err)}"
+            warnings.warn(err_msg)
+            return None
 
     def upload(self, threads=4):
         """Trigger upload of files.
@@ -56,7 +66,9 @@ class SumoCase:
         Retry the failed uploads X times."""
 
         if not self.files:
-            raise FileExistsError("No files to upload. Check search string.")
+            err_msg = "No files to upload. Check search string."
+            logger.warning(err_msg)
+            return {}
 
         ok_uploads = []
         failed_uploads = []
@@ -81,7 +93,7 @@ class SumoCase:
         if rejected_uploads:
             if any(
                 [
-                    res.get("metadata_upload_response_status_code") in [400, 404]
+                    res.get("metadata_upload_response_status_code") in [404]
                     for res in rejected_uploads
                 ]
             ):

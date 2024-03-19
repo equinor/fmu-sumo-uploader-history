@@ -11,6 +11,7 @@ import sys
 import logging
 import hashlib
 import base64
+import warnings
 import yaml
 
 from fmu.sumo.uploader._sumofile import SumoFile
@@ -38,7 +39,6 @@ def parse_yaml(path):
     """From path, parse file as yaml, return data"""
     with open(path, "r") as stream:
         data = yaml.safe_load(stream)
-
     return data
 
 
@@ -53,8 +53,6 @@ def file_to_byte_string(path):
     return byte_string
 
 
-
-
 class FileOnDisk(SumoFile):
     def __init__(self, path: str, metadata_path=None, verbosity="INFO"):
         """
@@ -66,7 +64,9 @@ class FileOnDisk(SumoFile):
         self.verbosity = verbosity
         logger.setLevel(level=self.verbosity)
 
-        self.metadata_path = metadata_path if metadata_path else path_to_yaml_path(path)
+        self.metadata_path = (
+            metadata_path if metadata_path else path_to_yaml_path(path)
+        )
         self.path = os.path.abspath(path)
         self.metadata = parse_yaml(self.metadata_path)
 
@@ -82,7 +82,11 @@ class FileOnDisk(SumoFile):
 
         self.metadata["_sumo"] = {}
 
-        if self.metadata["data"]["format"] in ["openvds", "segy"]:
+        if (
+            self.metadata.get("data")
+            and self.metadata.get("data").get("format")
+            and self.metadata.get("data").get("format") in ["openvds", "segy"]
+        ):
             self.metadata["_sumo"]["blob_size"] = 0
             self.byte_string = None
         else:
@@ -107,4 +111,3 @@ class FileOnDisk(SumoFile):
             s += f"\n# Uploaded to Sumo. Sumo_ID: {self.sumo_object_id}"
 
         return s
-

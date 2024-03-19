@@ -23,6 +23,17 @@ ENV = "dev"
 logger = logging.getLogger(__name__)
 logger.setLevel(level="DEBUG")
 
+if os.getenv("GITHUB_ACTIONS") == "true":
+    RUNNING_OUTSIDE_GITHUB_ACTIONS = "False"
+    print(
+        "Found the GITHUB_ACTIONS env var, so I know I am running on Github now. Will run these tests."
+    )
+else:
+    RUNNING_OUTSIDE_GITHUB_ACTIONS = "True"
+    msg = "Skipping these tests since they make most sense to run on Github Actions only"
+    print("\nNOT running on Github now.", msg)
+    pytest.skip(msg, allow_module_level=True)
+
 
 @pytest.fixture(name="explorer")
 def fixture_explorer(token: str) -> Explorer:

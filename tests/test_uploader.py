@@ -33,7 +33,8 @@ class SumoConnection:
     def connection(self):
         if self._connection is None:
             self._connection = uploader.SumoConnection(
-                env=self.env, token=self.token)
+                env=self.env, token=self.token
+            )
         return self._connection
 
 
@@ -151,9 +152,10 @@ def test_case(token):
     path = f"/objects('{e.sumo_parent_id}')"
     sumo_connection.api.delete(path=path)
 
+
 def test_case_with_restricted_child(token, unique_uuid):
-    """Assert that uploading a child with 'classification: restricted' works. 
-    Assumes that the identity running this test have enough rights for that. """
+    """Assert that uploading a child with 'classification: restricted' works.
+    Assumes that the identity running this test have enough rights for that."""
     sumo_connection = uploader.SumoConnection(env=ENV, token=token)
 
     _remove_cached_case_id()
@@ -172,7 +174,9 @@ def test_case_with_restricted_child(token, unique_uuid):
     time.sleep(1)
 
     child_binary_file = "tests/data/test_case_080/surface_restricted.bin"
-    child_metadata_file = "tests/data/test_case_080/.surface_restricted.bin.yml"
+    child_metadata_file = (
+        "tests/data/test_case_080/.surface_restricted.bin.yml"
+    )
     _update_metadata_file_with_unique_uuid(child_metadata_file, unique_uuid)
     e.add_files(child_binary_file)
     e.upload()
@@ -191,7 +195,7 @@ def test_case_with_restricted_child(token, unique_uuid):
     sumo_connection.api.delete(path=path)
 
 
-def test_one_file(token, unique_uuid):
+def test_case_with_one_child(token, unique_uuid):
     """Upload one file to Sumo. Assert that it is there."""
 
     sumo_connection = uploader.SumoConnection(env=ENV, token=token)
@@ -228,7 +232,49 @@ def test_one_file(token, unique_uuid):
     sumo_connection.api.delete(path=path)
 
 
-def test_missing_metadata(token, unique_uuid):
+def test_case_with_no_children(token, unique_uuid):
+    """Test failure handling when no files are found"""
+
+    sumo_connection = uploader.SumoConnection(env=ENV, token=token)
+
+    _remove_cached_case_id()
+
+    logger.debug("initialize CaseOnDisk")
+    case_file = "tests/data/test_case_080/case.yml"
+    _update_metadata_file_with_unique_uuid(case_file, unique_uuid)
+    e = uploader.CaseOnDisk(
+        case_metadata_path=case_file,
+        sumo_connection=sumo_connection,
+    )
+    e.register()
+    time.sleep(1)
+
+    with pytest.warns(
+        UserWarning
+    ) as warnings_record:  
+        e.add_files("tests/data/test_case_080/NO_SUCH_FILES_EXIST.*")
+        e.upload()
+        time.sleep(1)
+        for _ in warnings_record:
+            assert len(warnings_record) == 2, warnings_record
+            assert warnings_record[0].message.args[0].startswith(
+                "No files found"
+            )
+
+    query = f"{e.fmu_case_uuid}"
+    search_results = sumo_connection.api.get(
+        "/search", {"$query": query, "$size": 100}
+    ).json()
+    total = search_results.get("hits").get("total").get("value")
+    assert total == 1
+
+    # Delete this case
+    logger.debug("Cleanup after test: delete case")
+    path = f"/objects('{e.sumo_parent_id}')"
+    sumo_connection.api.delete(path=path)
+
+
+def test_missing_child_metadata(token, unique_uuid):
     """
     Try to upload files where one does not have metadata. Assert that warning is given
     and that upload commences with the other files. Check that the children are present.
@@ -255,14 +301,14 @@ def test_missing_metadata(token, unique_uuid):
     # do not have a companion metadata file
     with pytest.warns(
         UserWarning
-    ) as warnings_record:  # testdata contains one file with missing metadata
+    ) as warnings_record:  
         e.add_files("tests/data/test_case_080/surface_no_metadata.bin")
         for _ in warnings_record:
             assert len(warnings_record) == 1, warnings_record
-            assert (
-                warnings_record[0]
-                .message.args[0]
-                .endswith("No metadata, skipping file.")
+            assert warnings_record[0].message.args[0].startswith(
+                "No metadata, skipping file"
+            ) or warnings_record[0].message.args[0].startswith(
+                "Invalid metadata"
             )
 
     e.upload()
@@ -282,7 +328,97 @@ def test_missing_metadata(token, unique_uuid):
     sumo_connection.api.delete(path=path)
 
 
-def test_wrong_metadata(token, unique_uuid):
+def test_invalid_yml_in_case_metadata(token, unique_uuid):
+    """
+    Try to upload case file where the metadata file is not valid yml.
+    """
+    sumo_connection = uploader.SumoConnection(env=ENV, token=token)
+
+    _remove_cached_case_id()
+
+    case_file = "tests/data/test_case_080/case_invalid.yml"
+    # Invalid yml file, skip _update_metadata_file_with_unique_uuid(case_file, unique_uuid)
+    with pytest.warns(
+        UserWarning
+    ) as warnings_record:  
+        e = uploader.CaseOnDisk(
+            case_metadata_path=case_file,
+            sumo_connection=sumo_connection,
+        )
+        for _ in warnings_record:
+            assert len(warnings_record) >= 1, warnings_record
+            assert warnings_record[0].message.args[0].startswith(
+                "No metadata, skipping file"
+            ) or warnings_record[0].message.args[0].startswith(
+                "Invalid metadata"
+            )
+
+
+def test_invalid_yml_in_child_metadata(token, unique_uuid):
+    """
+    Try to upload child with invalid yml in its metadata file.
+    """
+    sumo_connection = uploader.SumoConnection(env=ENV, token=token)
+
+    _remove_cached_case_id()
+
+    case_file = "tests/data/test_case_080/case.yml"
+    _update_metadata_file_with_unique_uuid(case_file, unique_uuid)
+    e = uploader.CaseOnDisk(
+        case_metadata_path=case_file,
+        sumo_connection=sumo_connection,
+    )
+    e.register()
+
+    # Add a valid child
+    child_binary_file = "tests/data/test_case_080/surface.bin"
+    child_metadata_file = "tests/data/test_case_080/.surface.bin.yml"
+    _update_metadata_file_with_unique_uuid(child_metadata_file, unique_uuid)
+    e.add_files(child_binary_file)
+
+    # Add a child with invalid yml in its metadata file
+    problem_binary_file = "tests/data/test_case_080/surface_invalid.bin"
+    # problem_metadata_file = "tests/data/test_case_080/.surface_invalid.bin.yml"
+    # Skip this since file is not valid yml: _update_metadata_file_with_unique_uuid(problem_metadata_file, unique_uuid)
+    with pytest.warns(UserWarning, match="No metadata*"):
+        e.add_files(problem_binary_file)
+
+    e.upload()
+    time.sleep(1)
+
+    # Assert parent and only 1 valid child are on Sumo
+    query = f"{e.fmu_case_uuid}"
+    search_results = sumo_connection.api.get(
+        "/search", {"$query": query, "$size": 100}
+    ).json()
+    total = search_results.get("hits").get("total").get("value")
+    assert total == 2
+
+    # Delete this case
+    logger.debug("Cleanup after test: delete case")
+    path = f"/objects('{e.sumo_parent_id}')"
+    sumo_connection.api.delete(path=path)
+
+
+def test_schema_error_in_case(token, unique_uuid):
+    """
+    Try to upload files where case have metadata with error.
+    """
+    sumo_connection = uploader.SumoConnection(env=ENV, token=token)
+
+    _remove_cached_case_id()
+
+    case_file = "tests/data/test_case_080/case_error.yml"
+    # Cannot update invalid yml file: skip: _update_metadata_file_with_unique_uuid(case_file, unique_uuid)
+    with pytest.warns(UserWarning, match="Registering case on Sumo failed*"):
+        e = uploader.CaseOnDisk(
+            case_metadata_path=case_file,
+            sumo_connection=sumo_connection,
+        )
+        e.register()
+
+
+def test_schema_error_in_child(token, unique_uuid):
     """
     Try to upload files where one does have metadata with error. Assert that warning is given
     and that upload commences with the other files. Check that the children are present.
@@ -356,7 +492,8 @@ def _get_segy_path(segy_command):
 
 
 @pytest.mark.skipif(
-    sys.platform.startswith("darwin"), reason="do not run OpenVDS SEGYImport on mac os"
+    sys.platform.startswith("darwin"),
+    reason="do not run OpenVDS SEGYImport on mac os",
 )
 def test_openvds_available():
     """Test that OpenVDS is installed and can be successfully called"""
@@ -369,7 +506,8 @@ def test_openvds_available():
 
 
 @pytest.mark.skipif(
-    sys.platform.startswith("darwin"), reason="do not run OpenVDS SEGYImport on mac os"
+    sys.platform.startswith("darwin"),
+    reason="do not run OpenVDS SEGYImport on mac os",
 )
 def test_seismic_openvds_file(token, unique_uuid):
     """Upload seimic in OpenVDS format to Sumo. Assert that it is there."""
@@ -430,8 +568,9 @@ def test_seismic_openvds_file(token, unique_uuid):
             + json.loads(token_results.decode("utf-8")).get("baseuri")[6:]
             + child_id
         )
-        url_conn = "Suffix=?" + \
-            json.loads(token_results.decode("utf-8")).get("auth")
+        url_conn = "Suffix=?" + json.loads(token_results.decode("utf-8")).get(
+            "auth"
+        )
     except:
         token_results = token_results.decode("utf-8")
         url = "azureSAS" + token_results.split("?")[0][5:] + "/"
@@ -459,11 +598,15 @@ def test_seismic_openvds_file(token, unique_uuid):
                 "exported.segy",
             ]
             cmd_result = subprocess.run(
-                cmdstr, capture_output=True, text=True, shell=False)
+                cmdstr, capture_output=True, text=True, shell=False
+            )
 
             if cmd_result.returncode == 0:
                 assert os.path.isfile(exported_filepath)
-                assert os.stat(exported_filepath).st_size == os.stat(segy_filepath).st_size
+                assert (
+                    os.stat(exported_filepath).st_size
+                    == os.stat(segy_filepath).st_size
+                )
                 if os.path.exists(exported_filepath):
                     os.remove(exported_filepath)
                 print("SEGYExport succeeded on retry", export_retries)
@@ -471,7 +614,7 @@ def test_seismic_openvds_file(token, unique_uuid):
             else:
                 time.sleep(16)
 
-            export_retries+=1
+            export_retries += 1
 
         assert export_succeeded
 
@@ -503,7 +646,7 @@ def test_teardown(token):
     test_dir = "tests/data/test_case_080/"
     files = os.listdir(test_dir)
     for f in files:
-        if f.endswith(".yml"):
+        if f.endswith(".yml") and not f.__contains__("invalid"):
             dest_file = test_dir + os.path.sep + f
             _update_metadata_file_with_unique_uuid(
                 dest_file, "11111111-1111-1111-1111-111111111111"
