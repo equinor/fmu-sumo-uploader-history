@@ -83,13 +83,14 @@ class CaseOnDisk(SumoCase):
         super().__init__(case_metadata, sumo_connection, verbosity)
 
         self._sumo_logger = sumo_connection.api.getLogger(
-            "log_2_server_caseondisk"
+            "fmu-sumo-uploader"
         )
         self._sumo_logger.setLevel(logging.INFO)
         # Avoid that logging to sumo-server also is visible in local logging:
         self._sumo_logger.propagate = False
         self._sumo_logger.info(
-            "Upload init for sumo_parent_id: " + str(self._sumo_parent_id)
+            "Initializing Sumo upload for case with sumo_parent_id: " + str(self._sumo_parent_id), 
+                extra={'objectUuid': self._sumo_parent_id}
         )
 
     def __str__(self):
