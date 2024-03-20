@@ -132,7 +132,8 @@ class SumoCase:
                     f"Blob: [{u.get('blob_upload_response_status_code')}] "
                     f"{u.get('blob_upload_response_status_text')}"
                 )
-                self._sumo_logger.info(_get_log_msg(self.sumo_parent_id, u))
+                self._sumo_logger.info(_get_log_msg(self.sumo_parent_id, u), 
+                    extra={'objectUuid': self._sumo_parent_id})
 
         if failed_uploads:
             logger.info(
@@ -151,7 +152,8 @@ class SumoCase:
                     f"Blob: [{u.get('blob_upload_response_status_code')}] "
                     f"{u.get('blob_upload_response_status_text')}"
                 )
-                self._sumo_logger.info(_get_log_msg(self.sumo_parent_id, u))
+                self._sumo_logger.info(_get_log_msg(self.sumo_parent_id, u), 
+                    extra={'objectUuid': self._sumo_parent_id})
 
         logger.info("Summary:")
         logger.info("Total files count: %s", str(len(self.files)))
@@ -171,8 +173,9 @@ class SumoCase:
                 "upload_statistics": upload_statistics,
             }
         }
-        self._sumo_logger.info(str(summary))
-
+        self._sumo_logger.info(str(summary), 
+            extra={'objectUuid': self._sumo_parent_id})
+        
         return ok_uploads
 
     pass

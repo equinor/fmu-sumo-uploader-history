@@ -142,12 +142,13 @@ def sumo_upload_main(
     except Exception as err:
         logger.warning(f"Problem related to Sumo upload: {err} {type(err)}")
         _sumo_logger = sumo_connection.api.getLogger(
-            "log_2_server_sumo_upload"
+            "fmu-sumo-uploader"
         )
         _sumo_logger.propagate = False
         _sumo_logger.warning(
             "Problem related to Sumo upload for case: %s; %s %s",
-            case_metadata_path, err, type(err)
+            case_metadata_path, err, type(err), 
+                extra={'objectUuid': e.fmu_case_uuid_sumo_parent_id}
         )
         return
 
