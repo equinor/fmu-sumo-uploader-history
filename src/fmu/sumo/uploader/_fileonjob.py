@@ -11,11 +11,12 @@ import hashlib
 import base64
 
 from fmu.sumo.uploader._sumofile import SumoFile
+from fmu.sumo.uploader._logger import get_uploader_logger
+
 
 # pylint: disable=C0103 # allow non-snake case variable names
 
-logger = logging.getLogger(__name__)
-logger.setLevel(logging.CRITICAL)
+logger = get_uploader_logger()
 
 class FileOnJob(SumoFile):
     def __init__(self, byte_string: str, metadata):

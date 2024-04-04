@@ -13,16 +13,17 @@ import httpx
 
 
 from fmu.sumo.uploader._upload_files import upload_files
+from fmu.sumo.uploader._logger import get_uploader_logger
+
 
 
 # pylint: disable=C0103 # allow non-snake case variable names
 
-logger = logging.getLogger(__name__)
-logger.setLevel(logging.CRITICAL)
+logger = get_uploader_logger()
 
 
 class SumoCase:
-    def __init__(self, case_metadata: str, sumo_connection, verbosity):
+    def __init__(self, case_metadata: str, sumo_connection, verbosity="WARNING"):
         logger.setLevel(verbosity)
         self.sumo_connection = sumo_connection
         self.case_metadata = _sanitize_datetimes(case_metadata)

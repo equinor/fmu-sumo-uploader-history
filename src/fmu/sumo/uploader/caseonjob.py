@@ -5,9 +5,10 @@ import warnings
 
 from fmu.sumo.uploader._sumocase import SumoCase
 from fmu.sumo.uploader._fileonjob import FileOnJob
+from fmu.sumo.uploader._logger import get_uploader_logger
 
-logger = logging.getLogger(__name__)
-logger.setLevel(logging.CRITICAL)
+
+logger = get_uploader_logger()
 
 # pylint: disable=C0103 # allow non-snake case variable names
 

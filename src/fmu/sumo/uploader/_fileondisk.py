@@ -15,11 +15,12 @@ import warnings
 import yaml
 
 from fmu.sumo.uploader._sumofile import SumoFile
+from fmu.sumo.uploader._logger import get_uploader_logger
+
 
 # pylint: disable=C0103 # allow non-snake case variable names
 
-logger = logging.getLogger(__name__)
-logger.setLevel(logging.CRITICAL)
+logger = get_uploader_logger()
 
 
 def path_to_yaml_path(path):
@@ -54,15 +55,14 @@ def file_to_byte_string(path):
 
 
 class FileOnDisk(SumoFile):
-    def __init__(self, path: str, metadata_path=None, verbosity="INFO"):
+    def __init__(self, path: str, metadata_path=None, verbosity="WARNING"):
         """
         path (str): Path to file
         metadata_path (str): Path to metadata file. If not provided,
                              path will be derived from file path.
         """
 
-        self.verbosity = verbosity
-        logger.setLevel(level=self.verbosity)
+        logger.setLevel(level=verbosity)
 
         self.metadata_path = (
             metadata_path if metadata_path else path_to_yaml_path(path)

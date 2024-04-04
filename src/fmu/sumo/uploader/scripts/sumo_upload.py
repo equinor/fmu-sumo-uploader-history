@@ -16,9 +16,10 @@ except ModuleNotFoundError:
     from res.job_queue import ErtScript  # type: ignore
 
 from fmu.sumo import uploader
+from fmu.sumo.uploader._logger import get_uploader_logger
 
-logger = logging.getLogger(__name__)
-logger.setLevel(logging.WARNING)
+logger = get_uploader_logger()
+
 
 # This documentation is for sumo_uploader as an ERT workflow
 DESCRIPTION = """SUMO_UPLOAD will upload files to Sumo. The typical use case
@@ -74,6 +75,8 @@ def main() -> None:
     parser = _get_parser()
     args = parser.parse_args()
 
+    logger.setLevel(logging.INFO)
+
     if args.verbose:
         logger.setLevel(logging.INFO)
     if args.debug:
@@ -92,6 +95,7 @@ def main() -> None:
         metadata_path=args.metadata_path,
         threads=args.threads,
         config_path=args.config_path,
+        verbosity=logging.INFO
     )
 
 
@@ -102,9 +106,11 @@ def sumo_upload_main(
     metadata_path: str,
     threads: int,
     config_path: str = "fmuconfig/output/global_variables.yml",
+    verbosity: int = logging.INFO
 ) -> None:
     """A "main" function that can be used both from command line and from ERT workflow"""
 
+    logger.setLevel(verbosity)
     logger.debug("Running fmu_uploader_main()")
 
     # Catch-all to ensure FMU workflow keeps running even if something happens.
@@ -123,6 +129,7 @@ def sumo_upload_main(
         e = uploader.CaseOnDisk(
             case_metadata_path=case_metadata_path,
             sumo_connection=sumo_connection,
+            verbosity=verbosity
         )
         # add files to the case on disk object
         logger.info("Adding files. Search path is %s", searchpath)
@@ -163,6 +170,9 @@ class SumoUpload(ErtScript):
         # pylint: disable=no-self-use
         """Parse with a simplified command line parser, for ERT only,
         call sumo_upload_main()"""
+
+        logger.setLevel(logging.WARNING)
+
         logger.debug("Calling run() on SumoUpload")
         parser = _get_parser()
         args = parser.parse_args(args)
@@ -174,6 +184,7 @@ class SumoUpload(ErtScript):
             metadata_path=args.metadata_path,
             threads=args.threads,
             config_path=args.config_path,
+            verbosity=logging.WARNING
         )
 
 
