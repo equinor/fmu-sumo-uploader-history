@@ -4,7 +4,7 @@ import os
 import time
 
 # def getLogger(module_name="subscript"):
-def get_uploader_logger(log_to_file=True):
+def get_uploader_logger():
     # pylint: disable=invalid-name
     """Provides a unified logger for fmu-sumo-uploader.
 
