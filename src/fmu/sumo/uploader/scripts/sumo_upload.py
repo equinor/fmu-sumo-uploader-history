@@ -148,7 +148,7 @@ def sumo_upload_main(
         _sumo_logger.warning(
             "Problem related to Sumo upload for case: %s; %s %s",
             case_metadata_path, err, type(err), 
-                extra={'objectUuid': e.fmu_case_uuid_sumo_parent_id}
+                extra={'objectUuid': e.fmu_case_uuid}
         )
         return
 
