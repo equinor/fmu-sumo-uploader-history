@@ -18,6 +18,8 @@ fmu:
     description:
     - detailed description
     - optional
+  context:
+    stage: realization
   workflow:
     reference: rms/structural_model
   case:
