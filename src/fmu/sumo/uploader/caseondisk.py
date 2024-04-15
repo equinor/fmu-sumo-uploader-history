@@ -16,10 +16,11 @@ from fmu.sumo.uploader._sumocase import SumoCase
 from fmu.sumo.uploader._fileondisk import FileOnDisk
 from fmu.dataio import ExportData
 from fmu.dataio._utils import read_parameters_txt
+from fmu.sumo.uploader._logger import get_uploader_logger
 
 
-logger = logging.getLogger(__name__)
-logger.setLevel(logging.CRITICAL)
+
+logger = get_uploader_logger()
 
 # pylint: disable=C0103 # allow non-snake case variable names
 
@@ -64,7 +65,7 @@ class CaseOnDisk(SumoCase):
     """
 
     def __init__(
-        self, case_metadata_path: str, sumo_connection, verbosity=logging.INFO
+        self, case_metadata_path: str, sumo_connection, verbosity=logging.WARNING
     ):
         """Initialize CaseOnDisk.
 

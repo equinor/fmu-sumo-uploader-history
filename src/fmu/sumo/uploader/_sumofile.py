@@ -12,11 +12,12 @@ import subprocess
 import logging
 import warnings
 import httpx
+from fmu.sumo.uploader._logger import get_uploader_logger
+
 
 # pylint: disable=C0103 # allow non-snake case variable names
 
-logger = logging.getLogger(__name__)
-logger.setLevel(logging.WARNING)
+logger = get_uploader_logger()
 
 
 def _get_segyimport_cmdstr(blob_url, object_id, file_path, sample_unit):
