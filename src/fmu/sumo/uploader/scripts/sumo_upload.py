@@ -95,6 +95,7 @@ def main() -> None:
         metadata_path=args.metadata_path,
         threads=args.threads,
         config_path=args.config_path,
+        sumo_mode=args.sumo_mode,
         verbosity=logging.INFO
     )
 
@@ -106,6 +107,7 @@ def sumo_upload_main(
     metadata_path: str,
     threads: int,
     config_path: str = "fmuconfig/output/global_variables.yml",
+    sumo_mode: str ="COPY",
     verbosity: int = logging.INFO
 ) -> None:
     """A "main" function that can be used both from command line and from ERT workflow"""
@@ -184,6 +186,7 @@ class SumoUpload(ErtScript):
             metadata_path=args.metadata_path,
             threads=args.threads,
             config_path=args.config_path,
+            sumo_mode=args.sumo_mode,
             verbosity=logging.WARNING
         )
 
@@ -204,6 +207,12 @@ def _get_parser() -> argparse.ArgumentParser:
         type=str,
         help="Absolute path to global variables",
         default="fmuconfig/output/global_variables.yml",
+    )
+    parser.add_argument(
+        "--sumo_mode",
+        type=str,
+        help="COPY or MOVE files to cloud storage",
+        default="COPY",
     )
 
     parser.add_argument(
