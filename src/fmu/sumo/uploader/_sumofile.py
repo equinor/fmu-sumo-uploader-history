@@ -349,5 +349,6 @@ class SumoFile:
             self._delete_metadata(sumo_connection, self.sumo_object_id)
         else:
             result["status"] = "ok"
+            print("ROWH: ", os.environ['SUMO_MODE'], self.sumo_object_id, self.metadata.get("file").get("absolute_path"))
 
         return result
