@@ -21,7 +21,7 @@ STDOUT    sumo_upload.stdout
 EXECUTABLE  sumo_upload
 
 
-ARGLIST <SUMO_CASEPATH> <SEARCHPATH> <SUMO_ENV> "--config_path" <SUMO_CONFIG_PATH> <SUMO_MODE>
+ARGLIST <SUMO_CASEPATH> <SEARCHPATH> <SUMO_ENV> "--config_path" <SUMO_CONFIG_PATH> "--sumo_mode" <SUMO_MODE>
 
 MIN_ARG    2
 MAX_ARG    6

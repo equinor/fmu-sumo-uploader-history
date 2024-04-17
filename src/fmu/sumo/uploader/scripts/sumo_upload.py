@@ -121,17 +121,20 @@ def sumo_upload_main(
     try:
         # establish the connection to Sumo
         sumo_connection = uploader.SumoConnection(env=env)
-        logger.info("Connection to Sumo established")
+        logger.info("Connection to Sumo established, env=%s", env)
 
         # initiate the case on disk object
         logger.info("Case-relative metadata path is %s", metadata_path)
         case_metadata_path = Path(casepath) / Path(metadata_path)
         logger.info("case_metadata_path is %s", case_metadata_path)
 
+        logger.info("Sumo mode: %s", sumo_mode)
+
         e = uploader.CaseOnDisk(
             case_metadata_path=case_metadata_path,
             sumo_connection=sumo_connection,
-            verbosity=verbosity
+            verbosity=verbosity,
+            sumo_mode=sumo_mode
         )
         # add files to the case on disk object
         logger.info("Adding files. Search path is %s", searchpath)

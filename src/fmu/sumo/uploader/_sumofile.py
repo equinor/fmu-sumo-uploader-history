@@ -96,7 +96,7 @@ class SumoFile:
         response = sumo_connection.api.delete(path=path)
         return response
 
-    def upload_to_sumo(self, sumo_parent_id, sumo_connection):
+    def upload_to_sumo(self, sumo_parent_id, sumo_connection, sumo_mode):
         """Upload this file to Sumo"""
 
         logger.debug("Starting upload_to_sumo()")
@@ -349,6 +349,26 @@ class SumoFile:
             self._delete_metadata(sumo_connection, self.sumo_object_id)
         else:
             result["status"] = "ok"
-            print("ROWH: ", os.environ['SUMO_MODE'], self.sumo_object_id, self.metadata.get("file").get("absolute_path"))
+            file_path = self.metadata.get("file").get("absolute_path")
+            metadatafile_path = _path_to_yaml_path(file_path)
+            if sumo_mode == "MOVE":
+                if os.path.exists(file_path):
+                    os.remove(file_path)
+                    logger.debug("Deleted file after successful upload: ", file_path)
+                if os.path.exists(metadatafile_path):
+                    os.remove(metadatafile_path)
+                    logger.debug("Deleted metadatafile after successful upload: ", metadatafile_path)
 
         return result
+
+def _path_to_yaml_path(path):
+    """
+    Given a path, return the corresponding yaml file path
+    according to FMU standards.
+    /my/path/file.txt --> /my/path/.file.txt.yaml
+    """
+
+    dir_name = os.path.dirname(path)
+    basename = os.path.basename(path)
+
+    return os.path.join(dir_name, f".{basename}.yml")

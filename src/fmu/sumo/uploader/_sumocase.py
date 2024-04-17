@@ -23,7 +23,7 @@ logger = get_uploader_logger()
 
 
 class SumoCase:
-    def __init__(self, case_metadata: str, sumo_connection, verbosity="WARNING"):
+    def __init__(self, case_metadata: str, sumo_connection, verbosity="WARNING", sumo_mode="COPY"):
         logger.setLevel(verbosity)
         self.sumo_connection = sumo_connection
         self.case_metadata = _sanitize_datetimes(case_metadata)
@@ -32,6 +32,7 @@ class SumoCase:
         self._sumo_parent_id = self._fmu_case_uuid
         logger.debug("self._sumo_parent_id is %s", self._sumo_parent_id)
         self._files = []
+        self.sumo_mode = sumo_mode
 
         return
 
@@ -85,6 +86,7 @@ class SumoCase:
             sumo_parent_id=self.sumo_parent_id,
             sumo_connection=self.sumo_connection,
             threads=threads,
+            sumo_mode=self.sumo_mode
         )
 
         ok_uploads += upload_results.get("ok_uploads")
@@ -162,6 +164,7 @@ class SumoCase:
         logger.info("Failed: %s", str(len(failed_uploads)))
         logger.info("Rejected: %s", str(len(rejected_uploads)))
         logger.info(f"Wall time: {_dt:.2f} sec")
+        logger.info(f"Sumo mode: {str(self.sumo_mode)}")
 
         summary = {
             "upload_summary": {
@@ -172,6 +175,7 @@ class SumoCase:
                 "rejected_files": str(len(rejected_uploads)),
                 "wall_time_seconds": str(_dt),
                 "upload_statistics": upload_statistics,
+                "sumo_mode": self.sumo_mode
             }
         }
         self._sumo_logger.info(str(summary), 
