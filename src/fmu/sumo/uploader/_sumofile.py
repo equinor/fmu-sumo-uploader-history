@@ -349,15 +349,15 @@ class SumoFile:
             self._delete_metadata(sumo_connection, self.sumo_object_id)
         else:
             result["status"] = "ok"
-            file_path = self.metadata.get("file").get("absolute_path")
+            file_path = self.path
             metadatafile_path = _path_to_yaml_path(file_path)
             if sumo_mode == "MOVE":
                 if os.path.exists(file_path):
                     os.remove(file_path)
-                    logger.debug("Deleted file after successful upload: ", file_path)
+                    logger.debug("Deleted file after successful upload: %s", file_path)
                 if os.path.exists(metadatafile_path):
                     os.remove(metadatafile_path)
-                    logger.debug("Deleted metadatafile after successful upload: ", metadatafile_path)
+                    logger.debug("Deleted metadatafile after successful upload: %s", metadatafile_path)
 
         return result
 
