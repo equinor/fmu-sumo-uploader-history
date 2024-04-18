@@ -107,7 +107,7 @@ def sumo_upload_main(
     metadata_path: str,
     threads: int,
     config_path: str = "fmuconfig/output/global_variables.yml",
-    sumo_mode: str ="COPY",
+    sumo_mode: str ="copy",
     verbosity: int = logging.INFO
 ) -> None:
     """A "main" function that can be used both from command line and from ERT workflow"""
@@ -214,8 +214,8 @@ def _get_parser() -> argparse.ArgumentParser:
     parser.add_argument(
         "--sumo_mode",
         type=str,
-        help="COPY or MOVE files to cloud storage",
-        default="COPY",
+        help="copy or move files to cloud storage",
+        default="copy",
     )
 
     parser.add_argument(

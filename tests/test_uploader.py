@@ -69,7 +69,7 @@ def _update_metadata_file_with_unique_uuid(metadata_file, unique_case_uuid):
 def _update_metadata_file_absolute_path(metadata_file):
     """Updates an existing sumo metadata file with correct
     absolute_path.
-    (SUMO_MODE=MOVE depends on absolute_path for deleting files.)
+    (SUMO_MODE=move depends on absolute_path for deleting files.)
     """
 
     # Read the sumo metadata file given as input
@@ -657,7 +657,7 @@ def test_seismic_openvds_file(token, unique_uuid):
 )
 def test_sumo_mode_default(token, unique_uuid):
     """
-    Test that SUMO_MODE defaults to COPY, i.e. not deleting file after upload.
+    Test that SUMO_MODE defaults to copy, i.e. not deleting file after upload.
     """
     sumo_connection = uploader.SumoConnection(env=ENV, token=token)
 
@@ -708,7 +708,7 @@ def test_sumo_mode_default(token, unique_uuid):
 )
 def test_sumo_mode_copy(token, unique_uuid):
     """
-    Test SUMO_MODE=COPY, i.e. not deleting file after upload.
+    Test SUMO_MODE=copy, i.e. not deleting file after upload.
     """
     sumo_connection = uploader.SumoConnection(env=ENV, token=token)
 
@@ -719,7 +719,7 @@ def test_sumo_mode_copy(token, unique_uuid):
     e = uploader.CaseOnDisk(
         case_metadata_path=case_file,
         sumo_connection=sumo_connection,
-        sumo_mode="COPY",
+        sumo_mode="copy",
     )
     e.register()
 
@@ -760,7 +760,7 @@ def test_sumo_mode_copy(token, unique_uuid):
 )
 def test_sumo_mode_move(token, unique_uuid):
     """
-    Test SUMO_MODE=MOVE, i.e. deleting file after upload.
+    Test SUMO_MODE=move, i.e. deleting file after upload.
     """
     sumo_connection = uploader.SumoConnection(env=ENV, token=token)
 
@@ -771,7 +771,7 @@ def test_sumo_mode_move(token, unique_uuid):
     e = uploader.CaseOnDisk(
         case_metadata_path=case_file,
         sumo_connection=sumo_connection,
-        sumo_mode="MOVE",
+        sumo_mode="moVE", # test case-insensitive
     )
     e.register()
 

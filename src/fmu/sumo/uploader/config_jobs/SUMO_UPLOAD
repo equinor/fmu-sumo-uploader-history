@@ -8,12 +8,12 @@
 --                 e.g "share/results/maps/*.gri"
 --     SUMO_ENV: The environment to upload to (dev, prod)
 --     CONFIG_PATH: The path to global_variables.yml
---     SUMO_MODE: COPY or MOVE files to Sumo cloud storage
---                 COPY: copy files, leave original files on scratch
---                 MOVE: delete original files after successful upload
+--     SUMO_MODE: copy or move files to Sumo cloud storage
+--                 copy: copy files, leave original files on scratch
+--                 move: delete original files after successful upload
 
 DEFAULT <SUMO_CONFIG_PATH> fmuconfig/output/global_variables.yml
-DEFAULT <SUMO_MODE> COPY
+DEFAULT <SUMO_MODE> copy
 
 STDERR    sumo_upload.stderr
 STDOUT    sumo_upload.stdout

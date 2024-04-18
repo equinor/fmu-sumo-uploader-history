@@ -9,7 +9,7 @@ from concurrent.futures import ThreadPoolExecutor
 # pylint: disable=C0103 # allow non-snake case variable names
 
 
-def _upload_files(files, sumo_connection, sumo_parent_id, threads=4, sumo_mode="COPY"):
+def _upload_files(files, sumo_connection, sumo_parent_id, threads=4, sumo_mode="copy"):
     """
     Create threads and call _upload in each thread
     """
@@ -36,7 +36,7 @@ def _upload_file(args):
     return result
 
 
-def upload_files(files: list, sumo_parent_id: str, sumo_connection, threads=4, sumo_mode="COPY"):
+def upload_files(files: list, sumo_parent_id: str, sumo_connection, threads=4, sumo_mode="copy"):
     """
     Upload files
 

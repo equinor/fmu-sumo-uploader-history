@@ -66,7 +66,7 @@ class CaseOnDisk(SumoCase):
 
     def __init__(
         self, case_metadata_path: str, sumo_connection, 
-        verbosity=logging.WARNING, sumo_mode="COPY"
+        verbosity=logging.WARNING, sumo_mode="copy"
     ):
         """Initialize CaseOnDisk.
 
