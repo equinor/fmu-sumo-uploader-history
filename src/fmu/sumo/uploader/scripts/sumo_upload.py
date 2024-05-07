@@ -95,6 +95,7 @@ def main() -> None:
         metadata_path=args.metadata_path,
         threads=args.threads,
         config_path=args.config_path,
+        sumo_mode=args.sumo_mode,
         verbosity=logging.INFO
     )
 
@@ -106,6 +107,7 @@ def sumo_upload_main(
     metadata_path: str,
     threads: int,
     config_path: str = "fmuconfig/output/global_variables.yml",
+    sumo_mode: str ="copy",
     verbosity: int = logging.INFO
 ) -> None:
     """A "main" function that can be used both from command line and from ERT workflow"""
@@ -119,17 +121,20 @@ def sumo_upload_main(
     try:
         # establish the connection to Sumo
         sumo_connection = uploader.SumoConnection(env=env)
-        logger.info("Connection to Sumo established")
+        logger.info("Connection to Sumo established, env=%s", env)
 
         # initiate the case on disk object
         logger.info("Case-relative metadata path is %s", metadata_path)
         case_metadata_path = Path(casepath) / Path(metadata_path)
         logger.info("case_metadata_path is %s", case_metadata_path)
 
+        logger.info("Sumo mode: %s", sumo_mode)
+
         e = uploader.CaseOnDisk(
             case_metadata_path=case_metadata_path,
             sumo_connection=sumo_connection,
-            verbosity=verbosity
+            verbosity=verbosity,
+            sumo_mode=sumo_mode
         )
         # add files to the case on disk object
         logger.info("Adding files. Search path is %s", searchpath)
@@ -184,6 +189,7 @@ class SumoUpload(ErtScript):
             metadata_path=args.metadata_path,
             threads=args.threads,
             config_path=args.config_path,
+            sumo_mode=args.sumo_mode,
             verbosity=logging.WARNING
         )
 
@@ -204,6 +210,12 @@ def _get_parser() -> argparse.ArgumentParser:
         type=str,
         help="Absolute path to global variables",
         default="fmuconfig/output/global_variables.yml",
+    )
+    parser.add_argument(
+        "--sumo_mode",
+        type=str,
+        help="copy or move files to cloud storage",
+        default="copy",
     )
 
     parser.add_argument(

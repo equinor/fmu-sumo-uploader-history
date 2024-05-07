@@ -7,6 +7,7 @@ import logging
 import subprocess
 import json
 import yaml
+import shutil
 
 from fmu.sumo import uploader
 
@@ -61,6 +62,27 @@ def _update_metadata_file_with_unique_uuid(metadata_file, unique_case_uuid):
     parsed_yaml["fmu"]["case"]["uuid"] = str(unique_case_uuid)
 
     # Update the metadata file using the unique uuid
+    with open(metadata_file, "w") as f:
+        yaml.dump(parsed_yaml, f)
+
+
+def _update_metadata_file_absolute_path(metadata_file):
+    """Updates an existing sumo metadata file with correct
+    absolute_path.
+    (SUMO_MODE=move depends on absolute_path for deleting files.)
+    """
+
+    # Read the sumo metadata file given as input
+    with open(metadata_file) as f:
+        parsed_yaml = yaml.safe_load(f)
+
+    # Update absolute_path
+    parsed_yaml["file"]["absolute_path"] = os.path.join(
+        os.getcwd(), metadata_file
+    )
+    print(os.path.join(os.getcwd(), metadata_file))
+
+    # Update the metadata file
     with open(metadata_file, "w") as f:
         yaml.dump(parsed_yaml, f)
 
@@ -249,16 +271,14 @@ def test_case_with_no_children(token, unique_uuid):
     e.register()
     time.sleep(1)
 
-    with pytest.warns(
-        UserWarning
-    ) as warnings_record:  
+    with pytest.warns(UserWarning) as warnings_record:
         e.add_files("tests/data/test_case_080/NO_SUCH_FILES_EXIST.*")
         e.upload()
         time.sleep(1)
         for _ in warnings_record:
             assert len(warnings_record) == 2, warnings_record
-            assert warnings_record[0].message.args[0].startswith(
-                "No files found"
+            assert (
+                warnings_record[0].message.args[0].startswith("No files found")
             )
 
     query = f"{e.fmu_case_uuid}"
@@ -299,9 +319,7 @@ def test_missing_child_metadata(token, unique_uuid):
 
     # Assert that expected warning is given when the binary file
     # do not have a companion metadata file
-    with pytest.warns(
-        UserWarning
-    ) as warnings_record:  
+    with pytest.warns(UserWarning) as warnings_record:
         e.add_files("tests/data/test_case_080/surface_no_metadata.bin")
         for _ in warnings_record:
             assert len(warnings_record) == 1, warnings_record
@@ -338,9 +356,7 @@ def test_invalid_yml_in_case_metadata(token, unique_uuid):
 
     case_file = "tests/data/test_case_080/case_invalid.yml"
     # Invalid yml file, skip _update_metadata_file_with_unique_uuid(case_file, unique_uuid)
-    with pytest.warns(
-        UserWarning
-    ) as warnings_record:  
+    with pytest.warns(UserWarning) as warnings_record:
         e = uploader.CaseOnDisk(
             case_metadata_path=case_file,
             sumo_connection=sumo_connection,
@@ -634,6 +650,171 @@ def test_seismic_openvds_file(token, unique_uuid):
     # OpenVDS reads should fail after deletion
     with pytest.raises(RuntimeError, match="Error on downloading*"):
         handle = openvds.open(url, url_conn)
+
+@pytest.mark.skipif(
+    sys.platform.startswith("win"),
+    reason="do not run on windows due to file-path differences",
+)
+def test_sumo_mode_default(token, unique_uuid):
+    """
+    Test that SUMO_MODE defaults to copy, i.e. not deleting file after upload.
+    """
+    sumo_connection = uploader.SumoConnection(env=ENV, token=token)
+
+    _remove_cached_case_id()
+
+    case_file = "tests/data/test_case_080/case.yml"
+    _update_metadata_file_with_unique_uuid(case_file, unique_uuid)
+    e = uploader.CaseOnDisk(
+        case_metadata_path=case_file,
+        sumo_connection=sumo_connection,
+    )
+    e.register()
+
+    # Add a valid child
+    child_binary_file = "tests/data/test_case_080/surface.bin"
+    child_metadata_file = "tests/data/test_case_080/.surface.bin.yml"
+    _update_metadata_file_with_unique_uuid(child_metadata_file, unique_uuid)
+    e.add_files(child_binary_file)
+
+    # Ensure that the absolute_path is correctly set in metadatafile
+    # (The test files have dummy value for absolute_path)
+    _update_metadata_file_absolute_path(child_metadata_file)
+
+    e.upload()
+    time.sleep(1)
+
+    # Assert parent and valid child are on Sumo
+    query = f"{e.fmu_case_uuid}"
+    search_results = sumo_connection.api.get(
+        "/search", {"$query": query, "$size": 100}
+    ).json()
+    total = search_results.get("hits").get("total").get("value")
+    assert total == 2
+
+    # Assert that child file and metadatafile are not deleted
+    assert os.path.exists(child_binary_file)
+    assert os.path.exists(child_metadata_file)
+
+    # Delete this case
+    logger.debug("Cleanup after test: delete case")
+    path = f"/objects('{e.sumo_parent_id}')"
+    sumo_connection.api.delete(path=path)
+
+
+@pytest.mark.skipif(
+    sys.platform.startswith("win"),
+    reason="do not run on windows due to file-path differences",
+)
+def test_sumo_mode_copy(token, unique_uuid):
+    """
+    Test SUMO_MODE=copy, i.e. not deleting file after upload.
+    """
+    sumo_connection = uploader.SumoConnection(env=ENV, token=token)
+
+    _remove_cached_case_id()
+
+    case_file = "tests/data/test_case_080/case.yml"
+    _update_metadata_file_with_unique_uuid(case_file, unique_uuid)
+    e = uploader.CaseOnDisk(
+        case_metadata_path=case_file,
+        sumo_connection=sumo_connection,
+        sumo_mode="copy",
+    )
+    e.register()
+
+    # Add a valid child
+    child_binary_file = "tests/data/test_case_080/surface.bin"
+    child_metadata_file = "tests/data/test_case_080/.surface.bin.yml"
+    _update_metadata_file_with_unique_uuid(child_metadata_file, unique_uuid)
+    e.add_files(child_binary_file)
+
+    # Ensure that the absolute_path is correctly set in metadatafile
+    # (The test files have dummy value for absolute_path)
+    _update_metadata_file_absolute_path(child_metadata_file)
+
+    e.upload()
+    time.sleep(1)
+
+    # Assert parent and valid child are on Sumo
+    query = f"{e.fmu_case_uuid}"
+    search_results = sumo_connection.api.get(
+        "/search", {"$query": query, "$size": 100}
+    ).json()
+    total = search_results.get("hits").get("total").get("value")
+    assert total == 2
+
+    # Assert that child file and metadatafile are not deleted
+    assert os.path.exists(child_binary_file)
+    assert os.path.exists(child_metadata_file)
+
+    # Delete this case
+    logger.debug("Cleanup after test: delete case")
+    path = f"/objects('{e.sumo_parent_id}')"
+    sumo_connection.api.delete(path=path)
+
+
+@pytest.mark.skipif(
+    sys.platform.startswith("win"),
+    reason="do not run on windows due to file-path differences",
+)
+def test_sumo_mode_move(token, unique_uuid):
+    """
+    Test SUMO_MODE=move, i.e. deleting file after upload.
+    """
+    sumo_connection = uploader.SumoConnection(env=ENV, token=token)
+
+    _remove_cached_case_id()
+
+    case_file = "tests/data/test_case_080/case.yml"
+    _update_metadata_file_with_unique_uuid(case_file, unique_uuid)
+    e = uploader.CaseOnDisk(
+        case_metadata_path=case_file,
+        sumo_connection=sumo_connection,
+        sumo_mode="moVE", # test case-insensitive
+    )
+    e.register()
+
+    # Make copy of binary and metadatafile, so the delete
+    # is not messing with git status
+    shutil.copy2(
+        "tests/data/test_case_080/surface.bin",
+        "tests/data/test_case_080/surface.bin.copy",
+    )
+    shutil.copy2(
+        "tests/data/test_case_080/.surface.bin.yml",
+        "tests/data/test_case_080/.surface.bin.copy.yml",
+    )
+
+    # Add a valid child
+    child_binary_file = "tests/data/test_case_080/surface.bin.copy"
+    child_metadata_file = "tests/data/test_case_080/.surface.bin.copy.yml"
+    _update_metadata_file_with_unique_uuid(child_metadata_file, unique_uuid)
+    e.add_files(child_binary_file)
+
+    # Ensure that the absolute_path is correctly set in metadatafile
+    # (The test files have dummy value for absolute_path)
+    _update_metadata_file_absolute_path(child_metadata_file)
+
+    e.upload()
+    time.sleep(1)
+
+    # Assert parent and valid child are on Sumo
+    query = f"{e.fmu_case_uuid}"
+    search_results = sumo_connection.api.get(
+        "/search", {"$query": query, "$size": 100}
+    ).json()
+    total = search_results.get("hits").get("total").get("value")
+    assert total == 2
+
+    # Assert that child file and metadatafile are deleted
+    assert not os.path.exists(child_metadata_file)
+    assert not os.path.exists(child_binary_file)
+
+    # Delete this case
+    logger.debug("Cleanup after test: delete case")
+    path = f"/objects('{e.sumo_parent_id}')"
+    sumo_connection.api.delete(path=path)
 
 
 def test_teardown(token):

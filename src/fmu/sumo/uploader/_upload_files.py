@@ -9,14 +9,14 @@ from concurrent.futures import ThreadPoolExecutor
 # pylint: disable=C0103 # allow non-snake case variable names
 
 
-def _upload_files(files, sumo_connection, sumo_parent_id, threads=4):
+def _upload_files(files, sumo_connection, sumo_parent_id, threads=4, sumo_mode="copy"):
     """
     Create threads and call _upload in each thread
     """
 
     with ThreadPoolExecutor(threads) as executor:
         results = executor.map(
-            _upload_file, [(file, sumo_connection, sumo_parent_id) for file in files]
+            _upload_file, [(file, sumo_connection, sumo_parent_id, sumo_mode) for file in files]
         )
 
     return results
@@ -25,10 +25,10 @@ def _upload_files(files, sumo_connection, sumo_parent_id, threads=4):
 def _upload_file(args):
     """Upload a file"""
 
-    file, sumo_connection, sumo_parent_id = args
+    file, sumo_connection, sumo_parent_id, sumo_mode = args
 
     result = file.upload_to_sumo(
-        sumo_connection=sumo_connection, sumo_parent_id=sumo_parent_id
+        sumo_connection=sumo_connection, sumo_parent_id=sumo_parent_id, sumo_mode=sumo_mode
     )
 
     result["file"] = file
@@ -36,7 +36,7 @@ def _upload_file(args):
     return result
 
 
-def upload_files(files: list, sumo_parent_id: str, sumo_connection, threads=4):
+def upload_files(files: list, sumo_parent_id: str, sumo_connection, threads=4, sumo_mode="copy"):
     """
     Upload files
 
@@ -51,6 +51,7 @@ def upload_files(files: list, sumo_parent_id: str, sumo_connection, threads=4):
         sumo_connection=sumo_connection,
         sumo_parent_id=sumo_parent_id,
         threads=threads,
+        sumo_mode=sumo_mode
     )
 
     ok_uploads = []

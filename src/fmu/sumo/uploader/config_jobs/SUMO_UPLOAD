@@ -6,10 +6,14 @@
 --                 e.g. <SCRATCH>/<USER>/<CASE_DIR>
 --     SEARCHPATH: The searchpath relative to the realization root
 --                 e.g "share/results/maps/*.gri"
---     SUMO_ENV: The environment to upload to
+--     SUMO_ENV: The environment to upload to (dev, prod)
 --     CONFIG_PATH: The path to global_variables.yml
+--     SUMO_MODE: copy or move files to Sumo cloud storage
+--                 copy: copy files, leave original files on scratch
+--                 move: delete original files after successful upload
 
 DEFAULT <SUMO_CONFIG_PATH> fmuconfig/output/global_variables.yml
+DEFAULT <SUMO_MODE> copy
 
 STDERR    sumo_upload.stderr
 STDOUT    sumo_upload.stdout
@@ -17,12 +21,13 @@ STDOUT    sumo_upload.stdout
 EXECUTABLE  sumo_upload
 
 
-ARGLIST <SUMO_CASEPATH> <SEARCHPATH> <SUMO_ENV> "--config_path" <SUMO_CONFIG_PATH>
+ARGLIST <SUMO_CASEPATH> <SEARCHPATH> <SUMO_ENV> "--config_path" <SUMO_CONFIG_PATH> "--sumo_mode" <SUMO_MODE>
 
 MIN_ARG    2
-MAX_ARG    5
+MAX_ARG    6
 ARG_TYPE 0 STRING
 ARG_TYPE 1 STRING
 ARG_TYPE 2 STRING
 ARG_TYPE 3 STRING
 ARG_TYPE 4 STRING
+ARG_TYPE 5 STRING
