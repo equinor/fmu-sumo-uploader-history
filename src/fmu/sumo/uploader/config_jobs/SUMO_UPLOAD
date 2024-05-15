@@ -14,6 +14,7 @@
 
 DEFAULT <SUMO_CONFIG_PATH> fmuconfig/output/global_variables.yml
 DEFAULT <SUMO_MODE> copy
+DEFAULT <SUMO_ENV> prod
 
 STDERR    sumo_upload.stderr
 STDOUT    sumo_upload.stdout
