@@ -149,7 +149,7 @@ def sumo_upload_main(
         # upload the indexed files
         logger.info("Starting upload")
         e.upload(threads=threads)
-        e.upload_parameters_txt(glob_var_path=config_path)
+        e.upload_parameters_txt(config_path=config_path)
         logger.info("Upload done")
     except Exception as err:
         logger.warning(f"Problem related to Sumo upload: {err} {type(err)}")

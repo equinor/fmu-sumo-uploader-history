@@ -140,12 +140,12 @@ class CaseOnDisk(SumoCase):
 
     def upload_parameters_txt(
         self,
-        glob_var_path: str = "./fmuconfig/output/global_variables.yml",
+        config_path: str = "./fmuconfig/output/global_variables.yml",
         parameters_path: str = "./parameters.txt",
     ):
         """Upload parameters.txt if it is not present in Sumo for the current realization"""
         logger.info("Uploading parameters.txt")
-        print(f"CONFIG_PATH: {glob_var_path}")
+        print(f"CONFIG_PATH: {config_path}")
 
         fmu_id = self.fmu_case_uuid
         if not "realization" in self.files[0].metadata["fmu"].keys():
@@ -160,7 +160,7 @@ class CaseOnDisk(SumoCase):
         ).json()
 
         if search_res["hits"]["total"]["value"] == 0:
-            with open(glob_var_path, "r") as variables_yml:
+            with open(config_path, "r") as variables_yml:
                 global_config = yaml.safe_load(variables_yml)
 
             parameters = read_parameters_txt(parameters_path)
