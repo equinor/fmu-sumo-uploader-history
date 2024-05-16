@@ -253,6 +253,44 @@ def test_case_with_one_child(token, unique_uuid):
     path = f"/objects('{e.sumo_parent_id}')"
     sumo_connection.api.delete(path=path)
 
+def test_case_with_one_child_with_affiliate_access(token, unique_uuid):
+    """Upload one file to Sumo with affiliate access. 
+    Assert that it is there."""
+
+    sumo_connection = uploader.SumoConnection(env=ENV, token=token)
+
+    _remove_cached_case_id()
+
+    logger.debug("initialize CaseOnDisk")
+    case_file = "tests/data/test_case_080/case.yml"
+    _update_metadata_file_with_unique_uuid(case_file, unique_uuid)
+    print(unique_uuid)
+    e = uploader.CaseOnDisk(
+        case_metadata_path=case_file,
+        sumo_connection=sumo_connection,
+    )
+    e.register()
+    time.sleep(1)
+
+    child_binary_file = "tests/data/test_case_080/surface_affiliate.bin"
+    child_metadata_file = "tests/data/test_case_080/.surface_affiliate.bin.yml"
+    _update_metadata_file_with_unique_uuid(child_metadata_file, unique_uuid)
+    e.add_files(child_binary_file)
+    e.upload()
+    time.sleep(1)
+
+    query = f"{e.fmu_case_uuid}"
+    search_results = sumo_connection.api.get(
+        "/search", {"$query": query, "$size": 100}
+    ).json()
+    total = search_results.get("hits").get("total").get("value")
+    assert total == 2
+
+    # Delete this case
+    logger.debug("Cleanup after test: delete case")
+    path = f"/objects('{e.sumo_parent_id}')"
+    sumo_connection.api.delete(path=path)
+
 
 def test_case_with_no_children(token, unique_uuid):
     """Test failure handling when no files are found"""
