@@ -27,21 +27,20 @@ is as add-on to post-processing workflows which aggregate data across an
 ensemble and stores the results outside the realization folders. 
 
 SUMO_UPLOAD depends on the current case being registered in Sumo (done through 
-the ``WF_CREATE_CASE_METADATA`` workflow) and on data being exported 
+the ``WF_CREATE_CASE_METADATA`` workflow job) and on data being exported 
 with ``fmu-dataio``. 
 
 ``fmu-dataio`` must be used to produce metadata for each file 
 to be uploaded to Sumo. 
 
-The ``WF_CREATE_CASE_METADATA`` workflow must run *before* all SUMO_UPLOAD 
-instances to ensure the case metadata is registered in Sumo before the files 
-are uploaded. 
+The ``WF_CREATE_CASE_METADATA`` workflow job must run *before* all SUMO_UPLOAD 
+instances to ensure the case is registered in Sumo before data are uploaded. 
 
 SUMO_UPLOAD is implemented both as FORWARD_JOB and WORKFLOW_JOB and can be called from
 both contexts when running ERT.
 
-It is recommended to upload files after they are produced, instead of lumping all your 
-SUMO_UPLOADs in the end. 
+It is recommended to upload files immediately after they are produced, rather than
+lumping all SUMO_UPLOADs at the end of the ERT config file. 
     
 """
 
@@ -96,7 +95,7 @@ def main() -> None:
         threads=args.threads,
         config_path=args.config_path,
         sumo_mode=args.sumo_mode,
-        verbosity=logging.INFO
+        verbosity=logging.INFO,
     )
 
 
@@ -107,8 +106,8 @@ def sumo_upload_main(
     metadata_path: str,
     threads: int,
     config_path: str = "fmuconfig/output/global_variables.yml",
-    sumo_mode: str ="copy",
-    verbosity: int = logging.INFO
+    sumo_mode: str = "copy",
+    verbosity: int = logging.INFO,
 ) -> None:
     """A "main" function that can be used both from command line and from ERT workflow"""
 
@@ -134,7 +133,7 @@ def sumo_upload_main(
             case_metadata_path=case_metadata_path,
             sumo_connection=sumo_connection,
             verbosity=verbosity,
-            sumo_mode=sumo_mode
+            sumo_mode=sumo_mode,
         )
         # add files to the case on disk object
         logger.info("Adding files. Search path is %s", searchpath)
@@ -149,18 +148,18 @@ def sumo_upload_main(
         # upload the indexed files
         logger.info("Starting upload")
         e.upload(threads=threads)
-        e.upload_parameters_txt(glob_var_path=config_path)
+        e.upload_parameters_txt(config_path=config_path)
         logger.info("Upload done")
     except Exception as err:
         logger.warning(f"Problem related to Sumo upload: {err} {type(err)}")
-        _sumo_logger = sumo_connection.api.getLogger(
-            "fmu-sumo-uploader"
-        )
+        _sumo_logger = sumo_connection.api.getLogger("fmu-sumo-uploader")
         _sumo_logger.propagate = False
         _sumo_logger.warning(
             "Problem related to Sumo upload for case: %s; %s %s",
-            case_metadata_path, err, type(err), 
-                extra={'objectUuid': e.fmu_case_uuid}
+            case_metadata_path,
+            err,
+            type(err),
+            extra={"objectUuid": e.fmu_case_uuid},
         )
         return
 
@@ -190,7 +189,7 @@ class SumoUpload(ErtScript):
             threads=args.threads,
             config_path=args.config_path,
             sumo_mode=args.sumo_mode,
-            verbosity=logging.WARNING
+            verbosity=logging.WARNING,
         )
 
 
@@ -202,13 +201,15 @@ def _get_parser() -> argparse.ArgumentParser:
         "casepath", type=str, help="Absolute path to case root"
     )
     parser.add_argument(
-        "searchpath", type=str, help="Absolute search path for files to upload"
+        "searchpath",
+        type=str,
+        help="path relative to runpath for files to upload",
     )
     parser.add_argument("env", type=str, help="Sumo environment to use.")
     parser.add_argument(
         "--config_path",
         type=str,
-        help="Absolute path to global variables",
+        help="path to global variables relative to runpath",
         default="fmuconfig/output/global_variables.yml",
     )
     parser.add_argument(

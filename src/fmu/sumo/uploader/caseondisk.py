@@ -19,7 +19,6 @@ from fmu.dataio._utils import read_parameters_txt
 from fmu.sumo.uploader._logger import get_uploader_logger
 
 
-
 logger = get_uploader_logger()
 
 # pylint: disable=C0103 # allow non-snake case variable names
@@ -65,8 +64,11 @@ class CaseOnDisk(SumoCase):
     """
 
     def __init__(
-        self, case_metadata_path: str, sumo_connection, 
-        verbosity=logging.WARNING, sumo_mode="copy"
+        self,
+        case_metadata_path: str,
+        sumo_connection,
+        verbosity=logging.WARNING,
+        sumo_mode="copy",
     ):
         """Initialize CaseOnDisk.
 
@@ -84,15 +86,14 @@ class CaseOnDisk(SumoCase):
         case_metadata = _load_case_metadata(case_metadata_path)
         super().__init__(case_metadata, sumo_connection, verbosity, sumo_mode)
 
-        self._sumo_logger = sumo_connection.api.getLogger(
-            "fmu-sumo-uploader"
-        )
+        self._sumo_logger = sumo_connection.api.getLogger("fmu-sumo-uploader")
         self._sumo_logger.setLevel(logging.INFO)
         # Avoid that logging to sumo-server also is visible in local logging:
         self._sumo_logger.propagate = False
         self._sumo_logger.info(
-            "Initializing Sumo upload for case with sumo_parent_id: " + str(self._sumo_parent_id), 
-                extra={'objectUuid': self._sumo_parent_id}
+            "Initializing Sumo upload for case with sumo_parent_id: "
+            + str(self._sumo_parent_id),
+            extra={"objectUuid": self._sumo_parent_id},
         )
 
     def __str__(self):
@@ -140,12 +141,12 @@ class CaseOnDisk(SumoCase):
 
     def upload_parameters_txt(
         self,
-        glob_var_path: str = "./fmuconfig/output/global_variables.yml",
+        config_path: str = "./fmuconfig/output/global_variables.yml",
         parameters_path: str = "./parameters.txt",
     ):
         """Upload parameters.txt if it is not present in Sumo for the current realization"""
         logger.info("Uploading parameters.txt")
-        print(f"CONFIG_PATH: {glob_var_path}")
+        print(f"CONFIG_PATH: {config_path}")
 
         fmu_id = self.fmu_case_uuid
         if not "realization" in self.files[0].metadata["fmu"].keys():
@@ -160,7 +161,7 @@ class CaseOnDisk(SumoCase):
         ).json()
 
         if search_res["hits"]["total"]["value"] == 0:
-            with open(glob_var_path, "r") as variables_yml:
+            with open(config_path, "r") as variables_yml:
                 global_config = yaml.safe_load(variables_yml)
 
             parameters = read_parameters_txt(parameters_path)
