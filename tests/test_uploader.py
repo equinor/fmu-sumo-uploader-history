@@ -264,7 +264,6 @@ def test_case_with_one_child_with_affiliate_access(token, unique_uuid):
     logger.debug("initialize CaseOnDisk")
     case_file = "tests/data/test_case_080/case.yml"
     _update_metadata_file_with_unique_uuid(case_file, unique_uuid)
-    print(unique_uuid)
     e = uploader.CaseOnDisk(
         case_metadata_path=case_file,
         sumo_connection=sumo_connection,
