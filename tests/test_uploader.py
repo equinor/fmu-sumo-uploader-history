@@ -11,7 +11,7 @@ import shutil
 
 from fmu.sumo import uploader
 
-if not sys.platform.startswith("darwin"):
+if not sys.platform.startswith("darwin") and sys.version_info < (3, 12):
     import openvds
 
 # Run the tests from the root dir
