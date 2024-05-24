@@ -24,7 +24,7 @@ fmu:
     reference: rms/structural_model
   case:
     name: TestCase from fmu.sumo
-    uuid: ec1d0f6e-6e1a-4d7a-be60-1f6ef461fa82
+    uuid: 11111111-1111-1111-1111-111111111111
     user:
       id: testuser
     description:

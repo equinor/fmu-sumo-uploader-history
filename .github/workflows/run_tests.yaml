@@ -42,11 +42,11 @@ jobs:
         run: |
           az --version
           az account list
-          pip list | grep sumo
-          pip list | grep openvds
+          pip list | grep sumo || echo 'sumo not installed'
+          pip list | grep openvds || echo 'openvds not installed'
           python -c  'import sys; print(sys.platform)'
           python -c 'import os; import sys; print(os.path.dirname(sys.executable))'
           access_token=$(az account get-access-token --scope api://88d2b022-3539-4dda-9e66-853801334a86/.default --query accessToken --output tsv)
           export ACCESS_TOKEN=$access_token
 
-          pytest -s ./tests/test_uploader.py
+          pytest -s -r A ./tests/test_uploader.py
