@@ -545,7 +545,7 @@ def _get_segy_path(segy_command):
 
 
 @pytest.mark.skipif(
-    sys.platform.startswith("darwin") or sys.version_info > (3, 11),
+    sys.platform.startswith("darwin") or sys.version_info >= (3, 12),
     reason="do not run OpenVDS SEGYImport on mac os or python 3.12",
 )
 def test_openvds_available():
@@ -559,7 +559,7 @@ def test_openvds_available():
 
 
 @pytest.mark.skipif(
-    sys.platform.startswith("darwin") or sys.version_info > (3, 11),
+    sys.platform.startswith("darwin") or sys.version_info >= (3, 12),
     reason="do not run OpenVDS SEGYImport on mac os or python 3.12",
 )
 def test_seismic_openvds_file(token, unique_uuid):
