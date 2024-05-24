@@ -19,7 +19,7 @@ dependencies = [
     "sumo-wrapper-python>=1.0.3",
     "fmu-dataio",
     "httpx>=0.24.1",
-    "openvds; sys_platform != 'darwin'",
+    "OpenVDS; sys_platform != 'darwin' and python_version < '3.12'",
     "ert; sys_platform != 'win32'",
 ]
 
