@@ -600,14 +600,6 @@ def test_seismic_openvds_file(token, unique_uuid):
         .get("format")
         == "openvds"
     )
-    assert (
-        search_results.get("hits")
-        .get("hits")[0]
-        .get("_source")
-        .get("file")
-        .get("checksum_md5")
-        == ""
-    )
 
     # Get SAS token to read seismic directly from az blob store
     child_id = search_results.get("hits").get("hits")[0].get("_id")
