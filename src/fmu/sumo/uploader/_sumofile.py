@@ -125,7 +125,6 @@ class SumoFile:
             and self.metadata.get("data").get("format") in ["openvds", "segy"]
         ):
             self.metadata["data"]["format"] = "openvds"
-            self.metadata["file"]["checksum_md5"] = ""
 
         try:
             response = self._upload_metadata(
