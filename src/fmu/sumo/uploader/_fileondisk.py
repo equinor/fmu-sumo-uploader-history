@@ -82,20 +82,12 @@ class FileOnDisk(SumoFile):
 
         self.metadata["_sumo"] = {}
 
-        if (
-            self.metadata.get("data")
-            and self.metadata.get("data").get("format")
-            and self.metadata.get("data").get("format") in ["openvds", "segy"]
-        ):
-            self.metadata["_sumo"]["blob_size"] = 0
-            self.byte_string = None
-        else:
-            self.byte_string = file_to_byte_string(path)
-            self.metadata["_sumo"]["blob_size"] = len(self.byte_string)
-            digester = hashlib.md5(self.byte_string)
-            self.metadata["_sumo"]["blob_md5"] = base64.b64encode(
-                digester.digest()
-            ).decode("utf-8")
+        self.byte_string = file_to_byte_string(path)
+        self.metadata["_sumo"]["blob_size"] = len(self.byte_string)
+        digester = hashlib.md5(self.byte_string)
+        self.metadata["_sumo"]["blob_md5"] = base64.b64encode(
+            digester.digest()
+        ).decode("utf-8")
 
     def __repr__(self):
         if not self.metadata:
