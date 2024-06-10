@@ -1,34 +1,26 @@
 import subprocess
-from ert.config.forward_model_step import (
-    ForwardModelStep,
-    ForwardModelStepJSON,
-)
+from ert import ForwardModelStepJSON, ForwardModelStepPlugin
 
 
-class SumoUpload(ForwardModelStep):
+class SumoUpload(ForwardModelStepPlugin):
     def __init__(self):
         super().__init__(
             name="SUMO_UPLOAD",
-            executable="sumo_upload",
-            arglist=[
+            command=[
+                "sumo_upload",
                 "<SUMO_CASEPATH>",
                 "<SEARCHPATH>",
                 "<SUMO_ENV>",
-                '"--config_path"',
+                "--config_path",
                 "<SUMO_CONFIG_PATH>",
-                '"--sumo_mode"',
+                "--sumo_mode",
                 "<SUMO_MODE>",
             ],
-            min_arg=2,
-            max_arg=6,
-            arg_types=[
-                "STRING",
-                "STRING",
-                "STRING",
-                "STRING",
-                "STRING",
-                "STRING",
-            ],
+            default_mapping={
+                "<SUMO_CONFIG_PATH>": "fmuconfig/output/global_variables.yml",
+                "<SUMO_MODE>": "copy",
+                "<SUMO_ENV>": "prod",
+            },
         )
 
     def validate_pre_realization_run(
@@ -36,15 +28,18 @@ class SumoUpload(ForwardModelStep):
     ) -> ForwardModelStepJSON:
         return fm_step_json
 
-    def validate_pre_experiment(self) -> None:
-        try:
-            env = self.private_args["<SUMO_ENV>"]
-        except KeyError:
-            env = "prod"
-
+    def validate_pre_experiment(
+        self, fm_step_json: ForwardModelStepJSON
+    ) -> None:
+        env = fm_step_json["argList"][2]
         command = f"sumo_login -e {env} -m silent"
         return_code = subprocess.call(command, shell=True)
 
-        assert (
-            return_code == 0
-        ), "Your config uses Sumo, run sumo_login to authenticate."
+        err_msg = (
+            "\n\nYour config uses Sumo"
+            ", please authenticate using:\n\n\t"
+            f"sumo_login{f' -e {env}' if env != 'prod' else ''}"
+            "\n\n"
+        )
+
+        assert return_code == 0, err_msg
