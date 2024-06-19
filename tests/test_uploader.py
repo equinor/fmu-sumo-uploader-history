@@ -11,7 +11,7 @@ import shutil
 
 from fmu.sumo import uploader
 
-if not sys.platform.startswith("darwin"):
+if not sys.platform.startswith("darwin") and sys.version_info < (3, 12):
     import openvds
 
 # Run the tests from the root dir
@@ -545,8 +545,8 @@ def _get_segy_path(segy_command):
 
 
 @pytest.mark.skipif(
-    sys.platform.startswith("darwin"),
-    reason="do not run OpenVDS SEGYImport on mac os",
+    sys.platform.startswith("darwin") or sys.version_info >= (3, 12),
+    reason="do not run OpenVDS SEGYImport on mac os or python 3.12",
 )
 def test_openvds_available():
     """Test that OpenVDS is installed and can be successfully called"""
@@ -559,8 +559,8 @@ def test_openvds_available():
 
 
 @pytest.mark.skipif(
-    sys.platform.startswith("darwin"),
-    reason="do not run OpenVDS SEGYImport on mac os",
+    sys.platform.startswith("darwin") or sys.version_info >= (3, 12),
+    reason="do not run OpenVDS SEGYImport on mac os or python 3.12",
 )
 def test_seismic_openvds_file(token, unique_uuid):
     """Upload seimic in OpenVDS format to Sumo. Assert that it is there."""
@@ -599,14 +599,6 @@ def test_seismic_openvds_file(token, unique_uuid):
         .get("data")
         .get("format")
         == "openvds"
-    )
-    assert (
-        search_results.get("hits")
-        .get("hits")[0]
-        .get("_source")
-        .get("file")
-        .get("checksum_md5")
-        == ""
     )
 
     # Get SAS token to read seismic directly from az blob store

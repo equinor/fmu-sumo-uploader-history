@@ -39,8 +39,7 @@ class FileOnJob(SumoFile):
         self.metadata["_sumo"]["blob_md5"] = base64.b64encode(
             digester.digest()
         ).decode("utf-8")
+        self.metadata["file"]["checksum_md5"] = digester.hexdigest()
 
-        # TODO hack
         self.metadata["file"]["absolute_path"] = ""
-        self.metadata["file"]["checksum_md5"] = self.metadata["_sumo"]["blob_md5"]
 
