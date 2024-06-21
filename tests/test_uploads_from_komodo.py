@@ -98,6 +98,22 @@ def _get_suitable_cases(explorer):
     return selected
 
 
+def test_case_consistency(explorer: Explorer):
+    """Test internal consistency on cases uploaded from komodo-releases"""
+    cases = _get_suitable_cases(explorer)
+    non_consistent_cases = 0
+    for case in cases:
+        res = explorer._sumo.get(f"/admin/consistency-check?case={case.uuid}")
+        metadata_wo_blobs = len(res.json().get("metadata_without_blobs"))
+        blobs_wo_metadata = len(res.json().get("blobs_without_metadata"))
+        if (metadata_wo_blobs > 0 or blobs_wo_metadata > 0):
+            print ("NOT consistent case:", case.uuid, res.json())
+            non_consistent_cases += 1
+
+    print(f"{non_consistent_cases} NON-consistent cases out of {len(cases)}")
+    assert non_consistent_cases == 0, "One or more cases are NOT consistent"
+
+
 def test_case_surfaces(explorer: Explorer):
     """Test surfaces from cases uploaded from komodo-releases"""
     cases = _get_suitable_cases(explorer)
