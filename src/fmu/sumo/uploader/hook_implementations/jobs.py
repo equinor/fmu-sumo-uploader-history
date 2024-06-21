@@ -5,6 +5,7 @@ from pathlib import Path
 
 from ert.shared.plugins.plugin_manager import hook_implementation
 from ert.shared.plugins.plugin_response import plugin_response
+from fmu.sumo.uploader.forward_models import SumoUpload
 
 
 def _get_jobs_from_directory(directory):
@@ -66,3 +67,9 @@ def job_documentation(job_name):
         "examples": examples,
         "category": category,
     }
+
+
+@hook_implementation
+@plugin_response(plugin_name="fmu_sumo_uploader")
+def installable_forward_model_steps():
+    return [SumoUpload]
