@@ -25,6 +25,8 @@ class SumoUpload(ForwardModelStepPlugin):
                 "<SUMO_MODE>": "copy",
                 "<SUMO_ENV>": "prod",
             },
+            stderr_file="sumo_upload.stderr",
+            stdout_file="sumo_upload.stdout",
         )
 
     def validate_pre_realization_run(
