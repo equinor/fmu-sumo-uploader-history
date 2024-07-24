@@ -7,11 +7,8 @@
 """
 
 import os
-import sys
-import logging
 import hashlib
 import base64
-import warnings
 import yaml
 
 from fmu.sumo.uploader._sumofile import SumoFile

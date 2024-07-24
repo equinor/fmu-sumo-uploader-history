@@ -4,12 +4,10 @@ Base class for CaseOnJob and CaseOnDisk classes.
 
 """
 
-import logging
 import warnings
 import time
 import datetime
 import statistics
-import httpx
 
 
 from fmu.sumo.uploader._upload_files import upload_files
