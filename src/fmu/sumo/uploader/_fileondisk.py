@@ -11,26 +11,13 @@ import hashlib
 import base64
 import yaml
 
-from fmu.sumo.uploader._sumofile import SumoFile
+from fmu.sumo.uploader._sumofile import SumoFile, _path_to_yaml_path
 from fmu.sumo.uploader._logger import get_uploader_logger
 
 
 # pylint: disable=C0103 # allow non-snake case variable names
 
 logger = get_uploader_logger()
-
-
-def path_to_yaml_path(path):
-    """
-    Given a path, return the corresponding yaml file path
-    according to FMU standards.
-    /my/path/file.txt --> /my/path/.file.txt.yaml
-    """
-
-    dir_name = os.path.dirname(path)
-    basename = os.path.basename(path)
-
-    return os.path.join(dir_name, f".{basename}.yml")
 
 
 def parse_yaml(path):
@@ -62,7 +49,7 @@ class FileOnDisk(SumoFile):
         logger.setLevel(level=verbosity)
 
         self.metadata_path = (
-            metadata_path if metadata_path else path_to_yaml_path(path)
+            metadata_path if metadata_path else _path_to_yaml_path(path)
         )
         self.path = os.path.abspath(path)
         self.metadata = parse_yaml(self.metadata_path)
