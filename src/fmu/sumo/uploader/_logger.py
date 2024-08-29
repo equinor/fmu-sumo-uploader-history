@@ -1,7 +1,5 @@
 import logging
 import sys
-import os
-import time
 
 # def getLogger(module_name="subscript"):
 def get_uploader_logger():

@@ -6,7 +6,6 @@
 
 """
 
-import logging
 import hashlib
 import base64
 

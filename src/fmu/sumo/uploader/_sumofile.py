@@ -9,7 +9,6 @@ import os
 import sys
 import time
 import subprocess
-import logging
 import warnings
 import httpx
 from fmu.sumo.uploader._logger import get_uploader_logger
