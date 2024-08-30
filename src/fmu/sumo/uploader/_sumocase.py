@@ -14,20 +14,29 @@ from fmu.sumo.uploader._upload_files import upload_files
 from fmu.sumo.uploader._logger import get_uploader_logger
 
 
-
 # pylint: disable=C0103 # allow non-snake case variable names
 
 logger = get_uploader_logger()
 
 
 class SumoCase:
-    def __init__(self, case_metadata: str, sumo_connection, verbosity="WARNING", sumo_mode="copy"):
+    def __init__(
+        self,
+        case_metadata: str,
+        sumo_connection,
+        verbosity="WARNING",
+        sumo_mode="copy",
+        config_path="fmuconfig/output/global_variables.yml",
+        parameters_path="parameters.txt",
+    ):
         logger.setLevel(verbosity)
         self.sumo_connection = sumo_connection
         self.case_metadata = _sanitize_datetimes(case_metadata)
         self._fmu_case_uuid = self._get_fmu_case_uuid()
         logger.debug("self._fmu_case_uuid is %s", self._fmu_case_uuid)
         self._sumo_parent_id = self._fmu_case_uuid
+        self.config_path = config_path
+        self.parameters_path = parameters_path
         logger.debug("self._sumo_parent_id is %s", self._sumo_parent_id)
         self._files = []
         self.sumo_mode = sumo_mode
@@ -80,11 +89,13 @@ class SumoCase:
         logger.debug("files_to_upload: %s", files_to_upload)
 
         upload_results = upload_files(
-            files=files_to_upload,
-            sumo_parent_id=self.sumo_parent_id,
-            sumo_connection=self.sumo_connection,
-            threads=threads,
-            sumo_mode=self.sumo_mode
+            files_to_upload,
+            self._sumo_parent_id,
+            self.sumo_connection,
+            threads,
+            self.sumo_mode,
+            self.config_path,
+            self.parameters_path,
         )
 
         ok_uploads += upload_results.get("ok_uploads")
@@ -133,8 +144,10 @@ class SumoCase:
                     f"Blob: [{u.get('blob_upload_response_status_code')}] "
                     f"{u.get('blob_upload_response_status_text')}"
                 )
-                self._sumo_logger.info(_get_log_msg(self.sumo_parent_id, u), 
-                    extra={'objectUuid': self._sumo_parent_id})
+                self._sumo_logger.info(
+                    _get_log_msg(self.sumo_parent_id, u),
+                    extra={"objectUuid": self._sumo_parent_id},
+                )
 
         if failed_uploads:
             logger.info(
@@ -153,8 +166,10 @@ class SumoCase:
                     f"Blob: [{u.get('blob_upload_response_status_code')}] "
                     f"{u.get('blob_upload_response_status_text')}"
                 )
-                self._sumo_logger.info(_get_log_msg(self.sumo_parent_id, u), 
-                    extra={'objectUuid': self._sumo_parent_id})
+                self._sumo_logger.info(
+                    _get_log_msg(self.sumo_parent_id, u),
+                    extra={"objectUuid": self._sumo_parent_id},
+                )
 
         logger.info("Summary:")
         logger.info("Total files count: %s", str(len(self.files)))
@@ -173,12 +188,13 @@ class SumoCase:
                 "rejected_files": str(len(rejected_uploads)),
                 "wall_time_seconds": str(_dt),
                 "upload_statistics": upload_statistics,
-                "sumo_mode": self.sumo_mode
+                "sumo_mode": self.sumo_mode,
             }
         }
-        self._sumo_logger.info(str(summary), 
-            extra={'objectUuid': self._sumo_parent_id})
-        
+        self._sumo_logger.info(
+            str(summary), extra={"objectUuid": self._sumo_parent_id}
+        )
+
         return ok_uploads
 
     pass
