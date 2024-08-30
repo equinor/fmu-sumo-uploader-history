@@ -10,6 +10,7 @@ import yaml
 import shutil
 
 from fmu.sumo import uploader
+from fmu.sumo.uploader.scripts.sumo_upload import sumo_upload_main
 
 if not sys.platform.startswith("darwin") and sys.version_info < (3, 12):
     import openvds
@@ -253,8 +254,69 @@ def test_case_with_one_child(token, unique_uuid):
     path = f"/objects('{e.sumo_parent_id}')"
     sumo_connection.api.delete(path=path)
 
+def test_case_with_one_child_and_params(token, unique_uuid, tmp_path, monkeypatch):
+    """Upload one file to Sumo. Assert that it is there."""
+
+    sumo_connection = uploader.SumoConnection(env=ENV, token=token)
+
+    _remove_cached_case_id()
+
+    logger.debug("initialize CaseOnDisk")
+    case_file = "tests/data/test_case_080/case.yml"
+    _update_metadata_file_with_unique_uuid(case_file, unique_uuid)
+
+    # Create fmu like structure
+    case_path = tmp_path / "gorgon"
+    case_meta_folder = case_path / "share/metadata"
+    case_meta_folder.mkdir(parents=True)
+    case_meta_path = case_meta_folder / "fmu_case.yml"
+    case_meta_path.write_text(Path(case_file).read_text())
+    real_path = case_path / "realization-0/iter-0"
+    share_path = real_path / "share/results/surface/"
+
+    share_path.mkdir(parents=True)
+
+    child_binary_file = "tests/data/test_case_080/surface.bin"
+    child_metadata_file = "tests/data/test_case_080/.surface.bin.yml"
+    _update_metadata_file_with_unique_uuid(child_metadata_file, unique_uuid)
+
+    param_file = real_path / "parameters.txt"
+    param_file.write_text("TESTINGTESTING 1")
+    shutil.copy(child_binary_file, share_path / "surface.bin")
+    shutil.copy(child_metadata_file, share_path / ".surface.bin.yml")
+
+
+
+    e = uploader.CaseOnDisk(
+        case_metadata_path=case_file,
+        sumo_connection=sumo_connection,
+    )
+    e.register()
+    time.sleep(1)
+
+    search_string =  f"{str(share_path)}/*"
+    sumo_upload_main(case_path,
+    search_string,
+    ENV,
+    search_string,
+    1)
+    time.sleep(1)
+
+    query = f"{e.fmu_case_uuid}"
+    search_results = sumo_connection.api.get(
+        "/search", {"$query": query, "$size": 100}
+    ).json()
+    total = search_results.get("hits").get("total").get("value")
+    assert total == 3
+
+    # Delete this case
+    logger.debug("Cleanup after test: delete case")
+    path = f"/objects('{e.sumo_parent_id}')"
+    sumo_connection.api.delete(path=path)
+
+
 def test_case_with_one_child_with_affiliate_access(token, unique_uuid):
-    """Upload one file to Sumo with affiliate access. 
+    """Upload one file to Sumo with affiliate access.
     Assert that it is there."""
 
     sumo_connection = uploader.SumoConnection(env=ENV, token=token)
