@@ -936,7 +936,11 @@ def test_teardown(token):
     test_dir = "tests/data/test_case_080/"
     files = os.listdir(test_dir)
     for f in files:
-        if f.endswith(".yml") and not f.__contains__("invalid"):
+        if (
+            f.endswith(".yml")
+            and f.startswith(".")
+            and not f.__contains__("invalid")
+        ):
             dest_file = test_dir + os.path.sep + f
             _update_metadata_file_with_unique_uuid(
                 dest_file, "11111111-1111-1111-1111-111111111111"
