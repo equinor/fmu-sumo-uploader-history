@@ -272,6 +272,7 @@ def test_case_with_one_child_and_params(
     case_meta_folder = case_path / "share/metadata"
     case_meta_folder.mkdir(parents=True)
     case_meta_path = case_meta_folder / "fmu_case.yml"
+    print(case_meta_path)
     case_meta_path.write_text(Path(case_file).read_text(encoding="utf-8"))
     real_path = case_path / "realization-0/iter-0"
     share_path = real_path / "share/results/surface/"
