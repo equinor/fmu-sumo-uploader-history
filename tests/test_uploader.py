@@ -272,11 +272,13 @@ def test_case_with_one_child_and_params(
     case_meta_folder = case_path / "share/metadata"
     case_meta_folder.mkdir(parents=True)
     case_meta_path = case_meta_folder / "fmu_case.yml"
-    print(case_meta_path)
     case_meta_path.write_text(Path(case_file).read_text(encoding="utf-8"))
+    print("Case path:", case_meta_path, "And exists", case_meta_path.exists())
+
     real_path = case_path / "realization-0/iter-0"
     share_path = real_path / "share/results/surface/"
     fmu_config_folder = real_path / "fmuconfig/output/"
+    config_tmp_path = fmu_config_folder / "global_variables.yml"
 
     share_path.mkdir(parents=True)
     fmu_config_folder.mkdir(parents=True)
@@ -285,7 +287,13 @@ def test_case_with_one_child_and_params(
     fmu_globals_config = "tests/data/test_case_080/global_variables.yml"
     tmp_binary_file_location = str(share_path / "surface.bin")
     shutil.copy(child_binary_file, tmp_binary_file_location)
-    shutil.copy(fmu_globals_config, fmu_config_folder / "global_variables.yml")
+    shutil.copy(fmu_globals_config, config_tmp_path)
+    print(
+        "Fmu config path: ",
+        config_tmp_path,
+        "and exists: ",
+        config_tmp_path.exists(),
+    )
     _update_metadata_file_with_unique_uuid(child_metadata_file, unique_uuid)
     shutil.copy(child_metadata_file, share_path / ".surface.bin.yml")
 
