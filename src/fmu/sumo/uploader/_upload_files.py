@@ -18,14 +18,14 @@ from fmu.sumo.uploader._logger import get_uploader_logger
 logger = get_uploader_logger()
 
 
-def maybe_add_parameters(
+def create_parameter_file(
     case_uuid,
     realization_id,
     parameters_path,
     config_path,
     sumo_connection,
 ):
-    """Generate a parameters object from the parameters.txt file
+    """If not allready stored, generate a parameters object from the parameters.txt file
 
     Args:
         case_uuid (str): parent uuid for case
@@ -35,7 +35,7 @@ def maybe_add_parameters(
         sumo_connection (SumoClient): Initialized sumo client for performing query
 
     Returns:
-        SumoFile: parameters ready for upload
+        SumoFile: parameters ready for upload, or None
     """
 
     bytestring = None
@@ -49,8 +49,15 @@ def maybe_add_parameters(
         logger.info("Parameters allready uploaded")
         return None
 
-    with open(config_path, "r", encoding="utf-8") as variables_yml:
-        global_config = yaml.safe_load(variables_yml)
+    try:
+        with open(config_path, "r", encoding="utf-8") as variables_yml:
+            global_config = yaml.safe_load(variables_yml)
+    except FileNotFoundError:
+        logger.warning(
+            "No fmu config to read at %s, cannot generate metadata to upload parameters",
+            config_path,
+        )
+        return None
 
     parameters = read_parameters_txt(parameters_path)
 
@@ -85,7 +92,7 @@ def _upload_files(
     """
 
     realization_id = files[0].metadata["fmu"]["realization"]["uuid"]
-    paramfile = maybe_add_parameters(
+    paramfile = create_parameter_file(
         sumo_parent_id,
         realization_id,
         parameters_path,
