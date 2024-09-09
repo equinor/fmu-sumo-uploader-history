@@ -10,8 +10,12 @@ import yaml
 from fmu.dataio._utils import read_parameters_txt
 from fmu.dataio.dataio import ExportData
 from fmu.sumo.uploader._fileonjob import FileOnJob
+from fmu.sumo.uploader._logger import get_uploader_logger
 
 # pylint: disable=C0103 # allow non-snake case variable names
+
+
+logger = get_uploader_logger()
 
 
 def maybe_add_parameters(
@@ -36,14 +40,13 @@ def maybe_add_parameters(
 
     bytestring = None
     metadata = None
-    status_mess = "Parameters have allready been uploaded"
 
     query = f"fmu.case.uuid:{case_uuid} AND fmu.realization.uuid:{realization_id} AND data.content:parameters"
 
     search_res = sumo_connection.api.get("/search", {"$query": query}).json()
 
     if search_res["hits"]["total"]["value"] > 0:
-        status_mess = "Parameters allready uploaded"
+        logger.info("Parameters allready uploaded")
         return None
 
     with open(config_path, "r", encoding="utf-8") as variables_yml:
@@ -56,11 +59,15 @@ def maybe_add_parameters(
     )
     metadata = exd.generate_metadata(parameters)
 
+    if "fmu" not in metadata:
+        logger.warning("No fmu section upload will fail..")
+
     bytestring = json.dumps(parameters).encode("utf-8")
     paramfile = FileOnJob(bytestring, metadata)
     paramfile.metadata_path = ""
+    paramfile.path = ""
     paramfile.size = len(bytestring)
-    print(status_mess)
+    logger.info("Parameters will be uploaded")
     return paramfile
 
 
@@ -78,7 +85,6 @@ def _upload_files(
     """
 
     realization_id = files[0].metadata["fmu"]["realization"]["uuid"]
-
     paramfile = maybe_add_parameters(
         sumo_parent_id,
         realization_id,
