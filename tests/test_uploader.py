@@ -316,22 +316,20 @@ def test_case_with_one_child_and_params(
     ).json()
     hits = search_results["hits"]
     results = hits["hits"]
-    # print(results)
+    expected_res = ["case", "dictionary", "surface"]
+    found_res = []
     for result in results:
-        print(result["_source"]["class"])
+        class_type = result["_source"]["class"]
+        found_res.append(class_type)
+        assert class_type in expected_res
 
-        # print(
-        #     result["_source"]["data"]["name"],
-        #     ",",
-        #     result["_source"]["data"]["tagname"],
-        # )
-    # total = hits["total"]["value"]
-    # assert total == 3
+    total = hits["total"]["value"]
+    assert total == len(expected_res)
 
     # # Delete this case
-    # logger.debug("Cleanup after test: delete case")
-    # path = f"/objects('{e.sumo_parent_id}')"
-    # sumo_connection.api.delete(path=path)
+    logger.debug("Cleanup after test: delete case")
+    path = f"/objects('{e.sumo_parent_id}')"
+    sumo_connection.api.delete(path=path)
 
 
 def test_case_with_one_child_with_affiliate_access(token, unique_uuid):
@@ -882,7 +880,7 @@ def test_sumo_mode_move(token, unique_uuid):
     e = uploader.CaseOnDisk(
         case_metadata_path=case_file,
         sumo_connection=sumo_connection,
-        sumo_mode="moVE", # test case-insensitive
+        sumo_mode="moVE",  # test case-insensitive
     )
     e.register()
 
