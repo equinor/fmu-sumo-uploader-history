@@ -10,7 +10,6 @@ import yaml
 import shutil
 
 from fmu.sumo import uploader
-from fmu.sumo.uploader.scripts.sumo_upload import sumo_upload_main
 
 if not sys.platform.startswith("darwin") and sys.version_info < (3, 12):
     import openvds
