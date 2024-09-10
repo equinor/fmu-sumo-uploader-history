@@ -4,6 +4,7 @@
 
 """
 
+from pathlib import Path
 from concurrent.futures import ThreadPoolExecutor
 import json
 import yaml
@@ -51,7 +52,7 @@ def create_parameter_file(
 
     logger.info("Trying to read parameters at %s", parameters_path)
     try:
-        with open(config_path, "r", encoding="utf-8") as variables_yml:
+        with open(Path(config_path), "r", encoding="utf-8") as variables_yml:
             global_config = yaml.safe_load(variables_yml)
     except FileNotFoundError:
         logger.warning(
