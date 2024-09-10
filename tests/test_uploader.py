@@ -299,8 +299,10 @@ def test_case_with_one_child_and_params(
 
     param_file = real_path / "parameters.txt"
     param_file.write_text("TESTINGTESTING 1")
+    print("Parameters: ")
 
     monkeypatch.chdir(real_path)
+    print("Changed dir for test to: ", real_path)
     monkeypatch.setenv("_ERT_REALIZATION_NUMBER", "0")
     monkeypatch.setenv("_ERT_ITERATION_NUMBER", "0")
     monkeypatch.setenv("_ERT_RUNPATH", "./")
