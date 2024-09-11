@@ -5,6 +5,7 @@
 """
 
 from concurrent.futures import ThreadPoolExecutor
+from copy import deepcopy
 import json
 import yaml
 from fmu.dataio._utils import read_parameters_txt
@@ -25,7 +26,7 @@ def create_parameter_file(
     config_path,
     sumo_connection,
 ):
-    """If not allready stored, generate a parameters object from the parameters.txt file
+    """If not already stored, generate a parameters object from the parameters.txt file
 
     Args:
         case_uuid (str): parent uuid for case
@@ -46,7 +47,7 @@ def create_parameter_file(
     search_res = sumo_connection.api.get("/search", {"$query": query}).json()
 
     if search_res["hits"]["total"]["value"] > 0:
-        logger.info("Parameters allready uploaded")
+        logger.info("Parameters already uploaded")
         return None
 
     logger.info("Trying to read parameters at %s", parameters_path)
@@ -79,6 +80,44 @@ def create_parameter_file(
     return paramfile
 
 
+def maybe_upload_realization_and_iteration(sumo_connection, base_metadata):
+    realization_uuid = base_metadata["fmu"]["realization"]["uuid"]
+    iteration_uuid = base_metadata["fmu"]["iteration"]["uuid"]
+
+    hits = sumo_connection.api.post(
+        "/search",
+        json={
+            "query": {"ids": {"values": [realization_uuid, iteration_uuid]}},
+            "_source": ["class"],
+        },
+    ).json()["hits"]["hits"]
+
+    classes = [hit["_source"]["class"] for hit in hits]
+
+    if "realization" not in classes:
+        realization_metadata = deepcopy(base_metadata)
+        del realization_metadata["data"]
+        del realization_metadata["file"]
+        del realization_metadata["display"]
+        realization_metadata["class"] = "realization"
+        realization_metadata["fmu"]["context"]["stage"] = "iteration"
+
+        case_uuid = realization_metadata["fmu"]["case"]["uuid"]
+
+        if "iteration" not in classes:
+            iteration_metadata = deepcopy(realization_metadata)
+            del iteration_metadata["fmu"]["realization"]
+            iteration_metadata["class"] = "iteration"
+            iteration_metadata["fmu"]["context"]["stage"] = "case"
+            sumo_connection.api.post(
+                f"/objects('{case_uuid}')", json=iteration_metadata
+            )
+
+        sumo_connection.api.post(
+            f"/objects('{case_uuid}')", json=realization_metadata
+        )
+
+
 def _upload_files(
     files,
     sumo_connection,
@@ -92,7 +131,15 @@ def _upload_files(
     Create threads and call _upload in each thread
     """
 
-    realization_id = files[0].metadata["fmu"]["realization"]["uuid"]
+    base_file = None
+    for file in files:
+        if "fmu" in file.metadata and "realization" in file.metadata["fmu"]:
+            base_file = file
+
+    realization_id = base_file.metadata["fmu"]["realization"]["uuid"]
+
+    maybe_upload_realization_and_iteration(sumo_connection, base_file.metadata)
+
     paramfile = create_parameter_file(
         sumo_parent_id,
         realization_id,
