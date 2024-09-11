@@ -139,52 +139,6 @@ class CaseOnDisk(SumoCase):
             except Exception as err:
                 warnings.warn(f"No metadata, skipping file: {err}")
 
-    def upload_parameters_txt(
-        self,
-        config_path: str = "./fmuconfig/output/global_variables.yml",
-        parameters_path: str = "./parameters.txt",
-    ):
-        """Upload parameters.txt if it is not present in Sumo for the current realization"""
-        logger.info("Uploading parameters.txt")
-        print(f"CONFIG_PATH: {config_path}")
-
-        fmu_id = self.fmu_case_uuid
-        if not "realization" in self.files[0].metadata["fmu"].keys():
-            logger.info("Cannot upload parameters.txt due to no realization")
-            return
-
-        realization_id = self.files[0].metadata["fmu"]["realization"]["uuid"]
-        query = f"fmu.case.uuid:{fmu_id} AND fmu.realization.uuid:{realization_id} AND data.content:parameters"
-
-        search_res = self.sumo_connection.api.get(
-            "/search", {"$query": query}
-        ).json()
-
-        if search_res["hits"]["total"]["value"] == 0:
-            with open(config_path, "r") as variables_yml:
-                global_config = yaml.safe_load(variables_yml)
-
-            parameters = read_parameters_txt(parameters_path)
-
-            exd = ExportData(
-                config=global_config, content="parameters", name="parameters"
-            )
-            metadata = exd.generate_metadata(parameters)
-
-            bytes = json.dumps(parameters).encode("utf-8")
-            digester = hashlib.md5(bytes)
-            md5 = base64.b64encode(digester.digest()).decode("utf-8")
-            metadata["_sumo"] = {"blob_size": len(bytes), "blob_md5": md5}
-
-            upload_res = self.sumo_connection.api.post(
-                f"/objects('{fmu_id}')", json=metadata
-            )
-            self.sumo_connection.api.blob_client.upload_blob(
-                blob=bytes, url=upload_res.json()["blob_url"]
-            )
-        else:
-            logger.info("Parameters.txt already exists")
-
     def register(self):
         """Register this case on Sumo.
 

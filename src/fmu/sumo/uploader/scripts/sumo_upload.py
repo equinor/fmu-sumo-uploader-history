@@ -23,35 +23,35 @@ logger = get_uploader_logger()
 
 # This documentation is for sumo_uploader as an ERT workflow
 DESCRIPTION = """SUMO_UPLOAD will upload files to Sumo. The typical use case
-is as add-on to post-processing workflows which aggregate data across an 
-ensemble and stores the results outside the realization folders. 
+is as add-on to post-processing workflows which aggregate data across an
+ensemble and stores the results outside the realization folders.
 
-SUMO_UPLOAD depends on the current case being registered in Sumo (done through 
-the ``WF_CREATE_CASE_METADATA`` workflow job) and on data being exported 
-with ``fmu-dataio``. 
+SUMO_UPLOAD depends on the current case being registered in Sumo (done through
+the ``WF_CREATE_CASE_METADATA`` workflow job) and on data being exported
+with ``fmu-dataio``.
 
-``fmu-dataio`` must be used to produce metadata for each file 
-to be uploaded to Sumo. 
+``fmu-dataio`` must be used to produce metadata for each file
+to be uploaded to Sumo.
 
-The ``WF_CREATE_CASE_METADATA`` workflow job must run *before* all SUMO_UPLOAD 
-instances to ensure the case is registered in Sumo before data are uploaded. 
+The ``WF_CREATE_CASE_METADATA`` workflow job must run *before* all SUMO_UPLOAD
+instances to ensure the case is registered in Sumo before data are uploaded.
 
 SUMO_UPLOAD is implemented both as FORWARD_JOB and WORKFLOW_JOB and can be called from
 both contexts when running ERT.
 
 It is recommended to upload files immediately after they are produced, rather than
-lumping all SUMO_UPLOADs at the end of the ERT config file. 
-    
+lumping all SUMO_UPLOADs at the end of the ERT config file.
+
 """
 
-EXAMPLES = """``<SUMO_ENV>`` must be defined. It is typically defined in the ERT config, 
+EXAMPLES = """``<SUMO_ENV>`` must be defined. It is typically defined in the ERT config,
 and normally set to ``prod``.
 
-``<SUMO_CASEPATH>`` must be defined. It is typically defined in the ERT config, 
-and normally set to ``<SCRATCH>/<USER>/<CASE_DIR>`` 
+``<SUMO_CASEPATH>`` must be defined. It is typically defined in the ERT config,
+and normally set to ``<SCRATCH>/<USER>/<CASE_DIR>``
 e.g. ``/scratch/myfield/myuser/mycase/``
 
-Note! Filenames produced by FMU workflows use "--" as separator. Avoid this 
+Note! Filenames produced by FMU workflows use "--" as separator. Avoid this
 string in searchpaths, as it will cause following text to be parsed as a comment.
 
 FORWARD_MODEL example::
@@ -106,6 +106,7 @@ def sumo_upload_main(
     metadata_path: str,
     threads: int,
     config_path: str = "fmuconfig/output/global_variables.yml",
+    parameters_path: str = "parameters.txt",
     sumo_mode: str = "copy",
     verbosity: int = logging.INFO,
 ) -> None:
@@ -130,10 +131,12 @@ def sumo_upload_main(
         logger.info("Sumo mode: %s", sumo_mode)
 
         e = uploader.CaseOnDisk(
-            case_metadata_path=case_metadata_path,
-            sumo_connection=sumo_connection,
-            verbosity=verbosity,
-            sumo_mode=sumo_mode,
+            case_metadata_path,
+            sumo_connection,
+            verbosity,
+            sumo_mode,
+            config_path,
+            parameters_path,
         )
         # add files to the case on disk object
         logger.info("Adding files. Search path is %s", searchpath)
@@ -147,8 +150,7 @@ def sumo_upload_main(
 
         # upload the indexed files
         logger.info("Starting upload")
-        e.upload(threads=threads)
-        e.upload_parameters_txt(config_path=config_path)
+        e.upload(config_path, parameters_path, threads=threads)
         logger.info("Upload done")
     except Exception as err:
         logger.warning(f"Problem related to Sumo upload: {err} {type(err)}")

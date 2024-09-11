@@ -4,7 +4,6 @@ Base class for FileOnJob and FileOnDisk classes.
 
 """
 
-
 import os
 import sys
 import time
@@ -164,7 +163,7 @@ class SumoFile:
                 + err.response.text
             )
             logger.warning(
-                f"Metadata upload statuserror exception: {error_string}"
+                f"Metadata upload status error exception: {error_string}"
             )
             result.update(
                 {
@@ -353,15 +352,24 @@ class SumoFile:
                 try:
                     if os.path.exists(file_path):
                         os.remove(file_path)
-                        logger.debug("Deleted file after successful upload: %s", file_path)
+                        logger.debug(
+                            "Deleted file after successful upload: %s",
+                            file_path,
+                        )
                     if os.path.exists(metadatafile_path):
                         os.remove(metadatafile_path)
-                        logger.debug("Deleted metadatafile after successful upload: %s", metadatafile_path)
+                        logger.debug(
+                            "Deleted metadatafile after successful upload: %s",
+                            metadatafile_path,
+                        )
                 except Exception as err:
-                    err_msg = f"Error deleting file after upload: {err} {type(err)}"
+                    err_msg = (
+                        f"Error deleting file after upload: {err} {type(err)}"
+                    )
                     warnings.warn(err_msg)
 
         return result
+
 
 def _path_to_yaml_path(path):
     """

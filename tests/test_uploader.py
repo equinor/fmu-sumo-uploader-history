@@ -253,8 +253,94 @@ def test_case_with_one_child(token, unique_uuid):
     path = f"/objects('{e.sumo_parent_id}')"
     sumo_connection.api.delete(path=path)
 
+
+def test_case_with_one_child_and_params(
+    token, unique_uuid, tmp_path, monkeypatch
+):
+    """Upload one file to Sumo. Assert that it is there."""
+
+    sumo_connection = uploader.SumoConnection(env=ENV, token=token)
+
+    _remove_cached_case_id()
+
+    logger.debug("initialize CaseOnDisk")
+    case_file = "tests/data/test_case_080/case.yml"
+    _update_metadata_file_with_unique_uuid(case_file, unique_uuid)
+
+    # Create fmu like structure
+    case_path = tmp_path / "gorgon"
+    case_meta_folder = case_path / "share/metadata"
+    case_meta_folder.mkdir(parents=True)
+    case_meta_path = case_meta_folder / "fmu_case.yml"
+    case_meta_path.write_text(Path(case_file).read_text(encoding="utf-8"))
+
+    real_path = case_path / "realization-0/iter-0"
+    share_path = real_path / "share/results/surface/"
+    fmu_config_folder = real_path / "fmuconfig/output/"
+    config_tmp_path = fmu_config_folder / "global_variables.yml"
+
+    share_path.mkdir(parents=True)
+    fmu_config_folder.mkdir(parents=True)
+    child_binary_file = "tests/data/test_case_080/surface.bin"
+    child_metadata_file = "tests/data/test_case_080/.surface.bin.yml"
+    fmu_globals_config = "tests/data/test_case_080/global_variables.yml"
+    tmp_binary_file_location = str(share_path / "surface.bin")
+    shutil.copy(child_binary_file, tmp_binary_file_location)
+    shutil.copy(fmu_globals_config, config_tmp_path)
+    print(
+        "Fmu config path: ",
+        config_tmp_path,
+        "and exists: ",
+        config_tmp_path.exists(),
+    )
+    _update_metadata_file_with_unique_uuid(child_metadata_file, unique_uuid)
+    shutil.copy(child_metadata_file, share_path / ".surface.bin.yml")
+
+    param_file = real_path / "parameters.txt"
+    param_file.write_text("TESTINGTESTING 1")
+
+    monkeypatch.chdir(real_path)
+    monkeypatch.setenv("_ERT_REALIZATION_NUMBER", "0")
+    monkeypatch.setenv("_ERT_ITERATION_NUMBER", "0")
+    monkeypatch.setenv("_ERT_RUNPATH", "./")
+
+    e = uploader.CaseOnDisk(
+        case_metadata_path=case_meta_path,
+        sumo_connection=sumo_connection,
+    )
+    e.register()
+    time.sleep(1)
+
+    e.add_files(tmp_binary_file_location)
+    e.upload()
+    # search_string = f"{str(share_path)}/*"
+    # sumo_upload_main(case_path, search_string, ENV, search_string, 1)
+    time.sleep(1)
+
+    query = f"{e.fmu_case_uuid}"
+    search_results = sumo_connection.api.get(
+        "/search", {"$query": query, "$size": 100}
+    ).json()
+    hits = search_results["hits"]
+    results = hits["hits"]
+    expected_res = ["case", "dictionary", "surface"]
+    found_res = []
+    for result in results:
+        class_type = result["_source"]["class"]
+        found_res.append(class_type)
+        assert class_type in expected_res
+
+    total = hits["total"]["value"]
+    assert total == len(expected_res)
+
+    # # Delete this case
+    logger.debug("Cleanup after test: delete case")
+    path = f"/objects('{e.sumo_parent_id}')"
+    sumo_connection.api.delete(path=path)
+
+
 def test_case_with_one_child_with_affiliate_access(token, unique_uuid):
-    """Upload one file to Sumo with affiliate access. 
+    """Upload one file to Sumo with affiliate access.
     Assert that it is there."""
 
     sumo_connection = uploader.SumoConnection(env=ENV, token=token)
@@ -680,6 +766,7 @@ def test_seismic_openvds_file(token, unique_uuid):
     with pytest.raises(RuntimeError, match="Error on downloading*"):
         handle = openvds.open(url, url_conn)
 
+
 @pytest.mark.skipif(
     sys.platform.startswith("win"),
     reason="do not run on windows due to file-path differences",
@@ -800,7 +887,7 @@ def test_sumo_mode_move(token, unique_uuid):
     e = uploader.CaseOnDisk(
         case_metadata_path=case_file,
         sumo_connection=sumo_connection,
-        sumo_mode="moVE", # test case-insensitive
+        sumo_mode="moVE",  # test case-insensitive
     )
     e.register()
 
@@ -856,7 +943,11 @@ def test_teardown(token):
     test_dir = "tests/data/test_case_080/"
     files = os.listdir(test_dir)
     for f in files:
-        if f.endswith(".yml") and not f.__contains__("invalid"):
+        if (
+            f.endswith(".yml")
+            and f.startswith(".")
+            and not f.__contains__("invalid")
+        ):
             dest_file = test_dir + os.path.sep + f
             _update_metadata_file_with_unique_uuid(
                 dest_file, "11111111-1111-1111-1111-111111111111"
