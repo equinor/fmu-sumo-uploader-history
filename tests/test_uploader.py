@@ -273,7 +273,6 @@ def test_case_with_one_child_and_params(
     case_meta_folder.mkdir(parents=True)
     case_meta_path = case_meta_folder / "fmu_case.yml"
     case_meta_path.write_text(Path(case_file).read_text(encoding="utf-8"))
-    print("Case path:", case_meta_path, "And exists", case_meta_path.exists())
 
     real_path = case_path / "realization-0/iter-0"
     share_path = real_path / "share/results/surface/"
@@ -299,10 +298,8 @@ def test_case_with_one_child_and_params(
 
     param_file = real_path / "parameters.txt"
     param_file.write_text("TESTINGTESTING 1")
-    print("Parameters: ")
 
     monkeypatch.chdir(real_path)
-    print("Changed dir for test to: ", real_path)
     monkeypatch.setenv("_ERT_REALIZATION_NUMBER", "0")
     monkeypatch.setenv("_ERT_ITERATION_NUMBER", "0")
     monkeypatch.setenv("_ERT_RUNPATH", "./")
