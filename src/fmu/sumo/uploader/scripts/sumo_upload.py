@@ -94,6 +94,7 @@ def main() -> None:
         metadata_path=args.metadata_path,
         threads=args.threads,
         config_path=args.config_path,
+        parameters_path=args.parameters_path,
         sumo_mode=args.sumo_mode,
         verbosity=logging.INFO,
     )
@@ -190,6 +191,7 @@ class SumoUpload(ErtScript):
             metadata_path=args.metadata_path,
             threads=args.threads,
             config_path=args.config_path,
+            parameters_path=args.parameters_path,
             sumo_mode=args.sumo_mode,
             verbosity=logging.WARNING,
         )
@@ -229,6 +231,12 @@ def _get_parser() -> argparse.ArgumentParser:
         type=str,
         help="Case-relative path to case metadata",
         default="share/metadata/fmu_case.yml",
+    )
+    parser.add_argument(
+        "--parameters_path",
+        type=str,
+        help="path to parameters.txt",
+        default="parameters.txt",
     )
     parser.add_argument(
         "-v", "--verbose", action="store_true", help="Verbose output"
