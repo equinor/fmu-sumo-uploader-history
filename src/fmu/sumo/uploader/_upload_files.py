@@ -94,6 +94,7 @@ def _upload_files(
 
     for file in files:
         if "fmu" in file.metadata and "realization" in file.metadata["fmu"]:
+            logger.warning(f"DEBUG: {file.metadata}")
             realization_id = file.metadata["fmu"]["realization"]["uuid"]
 
             paramfile = create_parameter_file(
