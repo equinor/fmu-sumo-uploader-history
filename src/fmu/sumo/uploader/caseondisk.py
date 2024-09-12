@@ -8,14 +8,9 @@ import warnings
 import httpx
 
 import yaml
-import json
-import hashlib
-import base64
 
 from fmu.sumo.uploader._sumocase import SumoCase
 from fmu.sumo.uploader._fileondisk import FileOnDisk
-from fmu.dataio import ExportData
-from fmu.dataio._utils import read_parameters_txt
 from fmu.sumo.uploader._logger import get_uploader_logger
 
 
@@ -69,6 +64,8 @@ class CaseOnDisk(SumoCase):
         sumo_connection,
         verbosity=logging.WARNING,
         sumo_mode="copy",
+        config_path="fmuconfig/output/global_variables.yml",
+        parameters_path="parameters.txt",
     ):
         """Initialize CaseOnDisk.
 
@@ -84,7 +81,14 @@ class CaseOnDisk(SumoCase):
         logger.debug("case metadata path: %s", case_metadata_path)
         self._case_metadata_path = Path(case_metadata_path)
         case_metadata = _load_case_metadata(case_metadata_path)
-        super().__init__(case_metadata, sumo_connection, verbosity, sumo_mode)
+        super().__init__(
+            case_metadata,
+            sumo_connection,
+            verbosity,
+            sumo_mode,
+            config_path,
+            parameters_path,
+        )
 
         self._sumo_logger = sumo_connection.api.getLogger("fmu-sumo-uploader")
         self._sumo_logger.setLevel(logging.INFO)
@@ -212,7 +216,7 @@ def _load_case_metadata(case_metadata_path: str):
         with open(case_metadata_path, "r") as stream:
             yaml_data = yaml.safe_load(stream)
         return yaml_data
-    except Exception as err:
+    except Exception:
         warnings.warn(f"Invalid metadata in yml file {case_metadata_path}")
         return {}
 
