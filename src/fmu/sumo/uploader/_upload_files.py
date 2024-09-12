@@ -112,10 +112,12 @@ def maybe_upload_realization_and_iteration(sumo_connection, base_metadata):
             sumo_connection.api.post(
                 f"/objects('{case_uuid}')", json=iteration_metadata
             )
+            print(f"UPLOADING ITERATION OBJECT: {iteration_metadata}")
 
         sumo_connection.api.post(
             f"/objects('{case_uuid}')", json=realization_metadata
         )
+        print(f"UPLOADING REALIZATION OBJECT: {realization_metadata}")
 
 
 def _upload_files(
@@ -135,10 +137,11 @@ def _upload_files(
     for file in files:
         if "fmu" in file.metadata and "realization" in file.metadata["fmu"]:
             base_file = file
+            break
 
     realization_id = base_file.metadata["fmu"]["realization"]["uuid"]
 
-    maybe_upload_realization_and_iteration(sumo_connection, base_file.metadata)
+    # maybe_upload_realization_and_iteration(sumo_connection, base_file.metadata)
 
     paramfile = create_parameter_file(
         sumo_parent_id,
