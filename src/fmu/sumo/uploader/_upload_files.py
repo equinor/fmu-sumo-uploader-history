@@ -133,25 +133,25 @@ def _upload_files(
     Create threads and call _upload in each thread
     """
 
-    base_file = None
     for file in files:
         if "fmu" in file.metadata and "realization" in file.metadata["fmu"]:
-            base_file = file
+            realization_id = file.metadata["fmu"]["realization"]["uuid"]
+
+            maybe_upload_realization_and_iteration(
+                sumo_connection, file.metadata
+            )
+
+            paramfile = create_parameter_file(
+                sumo_parent_id,
+                realization_id,
+                parameters_path,
+                config_path,
+                sumo_connection,
+            )
+            if paramfile is not None:
+                files.append(paramfile)
+
             break
-
-    realization_id = base_file.metadata["fmu"]["realization"]["uuid"]
-
-    # maybe_upload_realization_and_iteration(sumo_connection, base_file.metadata)
-
-    paramfile = create_parameter_file(
-        sumo_parent_id,
-        realization_id,
-        parameters_path,
-        config_path,
-        sumo_connection,
-    )
-    if paramfile is not None:
-        files.append(paramfile)
 
     with ThreadPoolExecutor(threads) as executor:
         results = executor.map(
