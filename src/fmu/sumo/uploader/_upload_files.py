@@ -60,7 +60,14 @@ def create_parameter_file(
         )
         return None
 
-    parameters = read_parameters_txt(parameters_path)
+    try:
+        parameters = read_parameters_txt(parameters_path)
+    except FileNotFoundError:
+        logger.warning(
+            "No parameters file to read at %s, no file to upload.",
+            parameters_path,
+        )
+        return None
 
     exd = ExportData(
         config=global_config, content="parameters", name="parameters"
