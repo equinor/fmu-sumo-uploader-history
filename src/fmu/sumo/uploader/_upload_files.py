@@ -119,6 +119,8 @@ def maybe_upload_realization_and_iteration(sumo_connection, base_metadata):
             sumo_connection.api.post(
                 f"/objects('{case_uuid}')", json=iteration_metadata
             )
+            print(f"UPLOADING ITERATION: {iteration_metadata}", flush=True)
+            logger.info(f"UPLOADING ITERATION: {iteration_metadata}")
 
         sumo_connection.api.post(
             f"/objects('{case_uuid}')", json=realization_metadata
