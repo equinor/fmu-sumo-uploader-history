@@ -111,15 +111,19 @@ def maybe_upload_realization_and_iteration(sumo_connection, base_metadata):
 
         case_uuid = realization_metadata["fmu"]["case"]["uuid"]
 
+        # NOTE: If somehow iteration fails silently and realization goes ok
+        #       Then there will be a realization object without an iteration object
+        #       Also, no future uploads will try to upload an iteration since the check first checks for a realization
         if "iteration" not in classes:
             iteration_metadata = deepcopy(realization_metadata)
             del iteration_metadata["fmu"]["realization"]
             iteration_metadata["class"] = "iteration"
             iteration_metadata["fmu"]["context"]["stage"] = "iteration"
-            sumo_connection.api.post(
+            res = sumo_connection.api.post(
                 f"/objects('{case_uuid}')", json=iteration_metadata
             )
             print(f"UPLOADING ITERATION: {iteration_metadata}", flush=True)
+            print(f"UPLOAD RES: {res.content}", flush=True)
             logger.info(f"UPLOADING ITERATION: {iteration_metadata}")
 
         sumo_connection.api.post(
