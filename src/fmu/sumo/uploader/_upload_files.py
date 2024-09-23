@@ -107,7 +107,7 @@ def maybe_upload_realization_and_iteration(sumo_connection, base_metadata):
         del realization_metadata["file"]
         del realization_metadata["display"]
         realization_metadata["class"] = "realization"
-        realization_metadata["fmu"]["context"]["stage"] = "iteration"
+        realization_metadata["fmu"]["context"]["stage"] = "realization"
 
         case_uuid = realization_metadata["fmu"]["case"]["uuid"]
 
@@ -115,7 +115,7 @@ def maybe_upload_realization_and_iteration(sumo_connection, base_metadata):
             iteration_metadata = deepcopy(realization_metadata)
             del iteration_metadata["fmu"]["realization"]
             iteration_metadata["class"] = "iteration"
-            iteration_metadata["fmu"]["context"]["stage"] = "case"
+            iteration_metadata["fmu"]["context"]["stage"] = "iteration"
             sumo_connection.api.post(
                 f"/objects('{case_uuid}')", json=iteration_metadata
             )
