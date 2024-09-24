@@ -147,6 +147,7 @@ class SumoFile:
             )
             pass
         except (httpx.TimeoutException, httpx.ConnectError) as err:
+            err = err.with_traceback(None)
             logger.warning(
                 f"Metadata upload timeout/connection exception {err} {type(err)}"
             )
@@ -159,6 +160,7 @@ class SumoFile:
             )
             pass
         except httpx.HTTPStatusError as err:
+            err = err.with_traceback(None)
             error_string = (
                 str(err.response.status_code)
                 + err.response.reason_phrase
@@ -178,6 +180,7 @@ class SumoFile:
             )
             pass
         except Exception as err:
+            err = err.with_traceback(None)
             logger.warning(f"Metadata upload exception {err} {type(err)}")
             result.update(
                 {
@@ -255,6 +258,7 @@ class SumoFile:
                         pass
                     pass
                 except Exception as err:
+                    err = err.with_traceback(None)
                     logger.warning(
                         f"Seismic upload exception {err} {type(err)}"
                     )
@@ -282,6 +286,7 @@ class SumoFile:
                 )
                 pass
             except (httpx.TimeoutException, httpx.ConnectError) as err:
+                err = err.with_traceback(None)
                 logger.warning(
                     f"Blob upload failed on timeout/connect {err} {type(err)}"
                 )
@@ -296,6 +301,7 @@ class SumoFile:
                 )
                 pass
             except httpx.HTTPStatusError as err:
+                err = err.with_traceback(None)
                 logger.warning(
                     f"Blob upload failed on status {err} {type(err)} {err.response.text}"
                 )
@@ -310,6 +316,7 @@ class SumoFile:
                 )
                 pass
             except Exception as err:
+                err = err.with_traceback(None)
                 logger.warning(
                     f"Blob upload failed on exception {err} {type(err)}"
                 )
@@ -365,6 +372,7 @@ class SumoFile:
                             metadatafile_path,
                         )
                 except Exception as err:
+                    err = err.with_traceback(None)
                     err_msg = (
                         f"Error deleting file after upload: {err} {type(err)}"
                     )
