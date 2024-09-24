@@ -89,7 +89,7 @@ class SumoFile:
         return response
 
     def _delete_metadata(self, sumo_connection, object_id):
-        logger.warning("Deleting metadata object", object_id)
+        logger.warning("Deleting metadata object: %s", object_id)
         path = f"/objects('{object_id}')"
         response = sumo_connection.api.delete(path=path)
         return response
@@ -113,7 +113,6 @@ class SumoFile:
             )
             return result
 
-        _t0 = time.perf_counter()
         _t0_metadata = time.perf_counter()
 
         # Uploader converts segy-files to OpenVDS:
