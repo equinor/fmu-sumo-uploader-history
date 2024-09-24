@@ -10,6 +10,7 @@ import time
 import subprocess
 import warnings
 import httpx
+from azure.storage.blob import BlobClient
 from fmu.sumo.uploader._logger import get_uploader_logger
 
 
@@ -83,10 +84,11 @@ class SumoFile:
         return response
 
     def _upload_byte_string(self, sumo_connection, object_id, blob_url):
-        response = sumo_connection.api.blob_client.upload_blob(
-            blob=self.byte_string, url=blob_url
-        )
-        return response
+        blobclient = BlobClient.from_blob_url(blob_url)
+        response = blobclient.upload_blob(self.byte_string, blob_type="BlockBlob", length=len(self.byte_string))
+        # response has the form {'etag': '"0x8DCDC8EED1510CC"', 'last_modified': datetime.datetime(2024, 9, 24, 11, 49, 20, tzinfo=datetime.timezone.utc), 'content_md5': bytearray(b'\x1bPM3(\xe1o\xdf(\x1d\x1f\xb9Qm\xd9\x0b'), 'client_request_id': '08c962a4-7a6b-11ef-8710-acde48001122', 'request_id': 'f459ad2b-801e-007d-1977-0ef6ee000000', 'version': '2024-11-04', 'version_id': None, 'date': datetime.datetime(2024, 9, 24, 11, 49, 19, tzinfo=datetime.timezone.utc), 'request_server_encrypted': True, 'encryption_key_sha256': None, 'encryption_scope': None}
+        # ... which is not what the caller expects, so we return something reasonable.
+        return { "status_code": 201, "text": "Created" }
 
     def _delete_metadata(self, sumo_connection, object_id):
         logger.warning("Deleting metadata object: %s", object_id)
