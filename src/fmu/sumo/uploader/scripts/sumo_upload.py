@@ -15,6 +15,7 @@ try:
 except ModuleNotFoundError:
     from res.job_queue import ErtScript  # type: ignore
 
+from sumo.wrapper import SumoClient
 from fmu.sumo import uploader
 from fmu.sumo.uploader._logger import get_uploader_logger
 
@@ -121,7 +122,7 @@ def sumo_upload_main(
 
     try:
         # establish the connection to Sumo
-        sumo_connection = uploader.SumoConnection(env=env)
+        sumoclient = SumoClient(env=env)
         logger.info("Connection to Sumo established, env=%s", env)
 
         # initiate the case on disk object
@@ -133,7 +134,7 @@ def sumo_upload_main(
 
         e = uploader.CaseOnDisk(
             case_metadata_path,
-            sumo_connection,
+            sumo,
             verbosity,
             sumo_mode,
             config_path,
@@ -155,7 +156,7 @@ def sumo_upload_main(
         logger.info("Upload done")
     except Exception as err:
         logger.warning(f"Problem related to Sumo upload: {err} {type(err)}")
-        _sumo_logger = sumo_connection.api.getLogger("fmu-sumo-uploader")
+        _sumo_logger = sumoclient.getLogger("fmu-sumo-uploader")
         _sumo_logger.propagate = False
         _sumo_logger.warning(
             "Problem related to Sumo upload for case: %s; %s %s",

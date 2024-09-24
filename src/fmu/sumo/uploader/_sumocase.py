@@ -23,14 +23,14 @@ class SumoCase:
     def __init__(
         self,
         case_metadata: str,
-        sumo_connection,
+        sumoclient,
         verbosity="WARNING",
         sumo_mode="copy",
         config_path="fmuconfig/output/global_variables.yml",
         parameters_path="parameters.txt",
     ):
         logger.setLevel(verbosity)
-        self.sumo_connection = sumo_connection
+        self.sumoclient = sumoclient
         self.case_metadata = _sanitize_datetimes(case_metadata)
         self._fmu_case_uuid = self._get_fmu_case_uuid()
         logger.debug("self._fmu_case_uuid is %s", self._fmu_case_uuid)
@@ -91,7 +91,7 @@ class SumoCase:
         upload_results = upload_files(
             files_to_upload,
             self._sumo_parent_id,
-            self.sumo_connection,
+            self.sumoclient,
             threads,
             self.sumo_mode,
             self.config_path,

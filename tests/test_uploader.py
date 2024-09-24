@@ -9,6 +9,7 @@ import json
 import yaml
 import shutil
 
+from sumo.wrapper import SumoClient
 from fmu.sumo import uploader
 
 if not sys.platform.startswith("darwin") and sys.version_info < (3, 12):
@@ -22,21 +23,6 @@ ENV = "dev"
 
 logger = logging.getLogger(__name__)
 logger.setLevel(level="DEBUG")
-
-
-class SumoConnection:
-    def __init__(self, env, token=None):
-        self.env = env
-        self._connection = None
-        self.token = token
-
-    @property
-    def connection(self):
-        if self._connection is None:
-            self._connection = uploader.SumoConnection(
-                env=self.env, token=self.token
-            )
-        return self._connection
 
 
 def _remove_cached_case_id():
@@ -92,11 +78,11 @@ def _update_metadata_file_absolute_path(metadata_file):
 
 def test_initialization(token):
     """Assert that the CaseOnDisk object can be initialized"""
-    sumo_connection = SumoConnection(env=ENV, token=token).connection
+    sumoclient = SumoClient(env=ENV, token=token)
 
     case = uploader.CaseOnDisk(
         case_metadata_path="tests/data/test_case_080/case.yml",
-        sumo_connection=sumo_connection,
+        sumoclient=sumoclient,
     )
 
 
@@ -109,7 +95,7 @@ def test_pre_teardown(token):
 
 def test_upload_without_registration(token, unique_uuid):
     """Assert that attempting to upload to a non-existing/un-registered case gives warning."""
-    sumo_connection = uploader.SumoConnection(env=ENV, token=token)
+    sumoclient = SumoClient(env=ENV, token=token)
 
     _remove_cached_case_id()
 
@@ -118,7 +104,7 @@ def test_upload_without_registration(token, unique_uuid):
 
     case = uploader.CaseOnDisk(
         case_metadata_path=case_file,
-        sumo_connection=sumo_connection,
+        sumoclient=sumoclient,
         verbosity="DEBUG",
     )
 
@@ -133,7 +119,7 @@ def test_upload_without_registration(token, unique_uuid):
 
 def test_case(token):
     """Assert that after uploading case to Sumo, the case is there and is the only one."""
-    sumo_connection = uploader.SumoConnection(env=ENV, token=token)
+    sumoclient = SumoClient(env=ENV, token=token)
 
     _remove_cached_case_id()
 
@@ -142,13 +128,13 @@ def test_case(token):
     case_file = "tests/data/test_case_080/case.yml"
     e = uploader.CaseOnDisk(
         case_metadata_path=case_file,
-        sumo_connection=sumo_connection,
+        sumoclient=sumoclient,
     )
 
     # Assert that this case is not there in the first place
     logger.debug("Asserting that the test case is not already there")
     query = f"class:case AND fmu.case.uuid:{e.fmu_case_uuid}"
-    search_results = sumo_connection.api.get(
+    search_results = sumoclient.get(
         "/search", {"$query": query, "$size": 100}
     ).json()
     logger.debug("search results: %s", str(search_results))
@@ -162,7 +148,7 @@ def test_case(token):
     time.sleep(1)
 
     # assert that the case is there now
-    search_results = sumo_connection.api.get(
+    search_results = sumoclient.get(
         "/search", {"$query": query, "$size": 100}
     ).json()
     hits = search_results.get("hits").get("hits")
@@ -172,13 +158,13 @@ def test_case(token):
     # Delete this case
     logger.debug("Cleanup after test: delete case")
     path = f"/objects('{e.sumo_parent_id}')"
-    sumo_connection.api.delete(path=path)
+    sumoclient.delete(path=path)
 
 
 def test_case_with_restricted_child(token, unique_uuid):
     """Assert that uploading a child with 'classification: restricted' works.
     Assumes that the identity running this test have enough rights for that."""
-    sumo_connection = uploader.SumoConnection(env=ENV, token=token)
+    sumoclient = SumoClient(env=ENV, token=token)
 
     _remove_cached_case_id()
 
@@ -188,7 +174,7 @@ def test_case_with_restricted_child(token, unique_uuid):
     _update_metadata_file_with_unique_uuid(case_file, unique_uuid)
     e = uploader.CaseOnDisk(
         case_metadata_path=case_file,
-        sumo_connection=sumo_connection,
+        sumoclient=sumoclient,
     )
 
     # Register the case
@@ -205,7 +191,7 @@ def test_case_with_restricted_child(token, unique_uuid):
     time.sleep(1)
 
     query = f"{e.fmu_case_uuid}"
-    search_results = sumo_connection.api.get(
+    search_results = sumoclient.get(
         "/search", {"$query": query, "$size": 100}
     ).json()
     total = search_results.get("hits").get("total").get("value")
@@ -214,13 +200,13 @@ def test_case_with_restricted_child(token, unique_uuid):
     # Delete this case
     logger.debug("Cleanup after test: delete case")
     path = f"/objects('{e.sumo_parent_id}')"
-    sumo_connection.api.delete(path=path)
+    sumoclient.delete(path=path)
 
 
 def test_case_with_one_child(token, unique_uuid):
     """Upload one file to Sumo. Assert that it is there."""
 
-    sumo_connection = uploader.SumoConnection(env=ENV, token=token)
+    sumoclient = SumoClient(env=ENV, token=token)
 
     _remove_cached_case_id()
 
@@ -229,7 +215,7 @@ def test_case_with_one_child(token, unique_uuid):
     _update_metadata_file_with_unique_uuid(case_file, unique_uuid)
     e = uploader.CaseOnDisk(
         case_metadata_path=case_file,
-        sumo_connection=sumo_connection,
+        sumoclient=sumoclient,
     )
     e.register()
     time.sleep(1)
@@ -242,7 +228,7 @@ def test_case_with_one_child(token, unique_uuid):
     time.sleep(1)
 
     query = f"{e.fmu_case_uuid}"
-    search_results = sumo_connection.api.get(
+    search_results = sumoclient.get(
         "/search", {"$query": query, "$size": 100}
     ).json()
     total = search_results.get("hits").get("total").get("value")
@@ -251,7 +237,7 @@ def test_case_with_one_child(token, unique_uuid):
     # Delete this case
     logger.debug("Cleanup after test: delete case")
     path = f"/objects('{e.sumo_parent_id}')"
-    sumo_connection.api.delete(path=path)
+    sumoclient.delete(path=path)
 
 
 def test_case_with_one_child_and_params(
@@ -259,7 +245,7 @@ def test_case_with_one_child_and_params(
 ):
     """Upload one file to Sumo. Assert that it is there."""
 
-    sumo_connection = uploader.SumoConnection(env=ENV, token=token)
+    sumoclient = SumoClient(env=ENV, token=token)
 
     _remove_cached_case_id()
 
@@ -306,7 +292,7 @@ def test_case_with_one_child_and_params(
 
     e = uploader.CaseOnDisk(
         case_metadata_path=case_meta_path,
-        sumo_connection=sumo_connection,
+        sumoclient=sumoclient,
     )
     e.register()
     time.sleep(1)
@@ -318,7 +304,7 @@ def test_case_with_one_child_and_params(
     time.sleep(1)
 
     query = f"{e.fmu_case_uuid}"
-    search_results = sumo_connection.api.get(
+    search_results = sumoclient.get(
         "/search", {"$query": query, "$size": 100}
     ).json()
     hits = search_results["hits"]
@@ -336,14 +322,14 @@ def test_case_with_one_child_and_params(
     # # Delete this case
     logger.debug("Cleanup after test: delete case")
     path = f"/objects('{e.sumo_parent_id}')"
-    sumo_connection.api.delete(path=path)
+    sumoclient.delete(path=path)
 
 
 def test_case_with_one_child_with_affiliate_access(token, unique_uuid):
     """Upload one file to Sumo with affiliate access.
     Assert that it is there."""
 
-    sumo_connection = uploader.SumoConnection(env=ENV, token=token)
+    sumoclient = SumoClient(env=ENV, token=token)
 
     _remove_cached_case_id()
 
@@ -352,7 +338,7 @@ def test_case_with_one_child_with_affiliate_access(token, unique_uuid):
     _update_metadata_file_with_unique_uuid(case_file, unique_uuid)
     e = uploader.CaseOnDisk(
         case_metadata_path=case_file,
-        sumo_connection=sumo_connection,
+        sumoclient=sumoclient,
     )
     e.register()
     time.sleep(1)
@@ -365,7 +351,7 @@ def test_case_with_one_child_with_affiliate_access(token, unique_uuid):
     time.sleep(1)
 
     query = f"{e.fmu_case_uuid}"
-    search_results = sumo_connection.api.get(
+    search_results = sumoclient.get(
         "/search", {"$query": query, "$size": 100}
     ).json()
     total = search_results.get("hits").get("total").get("value")
@@ -374,13 +360,13 @@ def test_case_with_one_child_with_affiliate_access(token, unique_uuid):
     # Delete this case
     logger.debug("Cleanup after test: delete case")
     path = f"/objects('{e.sumo_parent_id}')"
-    sumo_connection.api.delete(path=path)
+    sumoclient.delete(path=path)
 
 
 def test_case_with_no_children(token, unique_uuid):
     """Test failure handling when no files are found"""
 
-    sumo_connection = uploader.SumoConnection(env=ENV, token=token)
+    sumoclient = SumoClient(env=ENV, token=token)
 
     _remove_cached_case_id()
 
@@ -389,7 +375,7 @@ def test_case_with_no_children(token, unique_uuid):
     _update_metadata_file_with_unique_uuid(case_file, unique_uuid)
     e = uploader.CaseOnDisk(
         case_metadata_path=case_file,
-        sumo_connection=sumo_connection,
+        sumoclient=sumoclient,
     )
     e.register()
     time.sleep(1)
@@ -405,7 +391,7 @@ def test_case_with_no_children(token, unique_uuid):
             )
 
     query = f"{e.fmu_case_uuid}"
-    search_results = sumo_connection.api.get(
+    search_results = sumoclient.get(
         "/search", {"$query": query, "$size": 100}
     ).json()
     total = search_results.get("hits").get("total").get("value")
@@ -414,7 +400,7 @@ def test_case_with_no_children(token, unique_uuid):
     # Delete this case
     logger.debug("Cleanup after test: delete case")
     path = f"/objects('{e.sumo_parent_id}')"
-    sumo_connection.api.delete(path=path)
+    sumoclient.delete(path=path)
 
 
 def test_missing_child_metadata(token, unique_uuid):
@@ -422,7 +408,7 @@ def test_missing_child_metadata(token, unique_uuid):
     Try to upload files where one does not have metadata. Assert that warning is given
     and that upload commences with the other files. Check that the children are present.
     """
-    sumo_connection = uploader.SumoConnection(env=ENV, token=token)
+    sumoclient = SumoClient(env=ENV, token=token)
 
     _remove_cached_case_id()
 
@@ -430,7 +416,7 @@ def test_missing_child_metadata(token, unique_uuid):
     _update_metadata_file_with_unique_uuid(case_file, unique_uuid)
     e = uploader.CaseOnDisk(
         case_metadata_path=case_file,
-        sumo_connection=sumo_connection,
+        sumoclient=sumoclient,
     )
     e.register()
 
@@ -457,7 +443,7 @@ def test_missing_child_metadata(token, unique_uuid):
 
     # Assert parent and valid child is on Sumo
     query = f"{e.fmu_case_uuid}"
-    search_results = sumo_connection.api.get(
+    search_results = sumoclient.get(
         "/search", {"$query": query, "$size": 100}
     ).json()
     total = search_results.get("hits").get("total").get("value")
@@ -466,14 +452,14 @@ def test_missing_child_metadata(token, unique_uuid):
     # Delete this case
     logger.debug("Cleanup after test: delete case")
     path = f"/objects('{e.sumo_parent_id}')"
-    sumo_connection.api.delete(path=path)
+    sumoclient.delete(path=path)
 
 
 def test_invalid_yml_in_case_metadata(token, unique_uuid):
     """
     Try to upload case file where the metadata file is not valid yml.
     """
-    sumo_connection = uploader.SumoConnection(env=ENV, token=token)
+    sumoclient = SumoClient(env=ENV, token=token)
 
     _remove_cached_case_id()
 
@@ -482,7 +468,7 @@ def test_invalid_yml_in_case_metadata(token, unique_uuid):
     with pytest.warns(UserWarning) as warnings_record:
         e = uploader.CaseOnDisk(
             case_metadata_path=case_file,
-            sumo_connection=sumo_connection,
+            sumoclient=sumoclient,
         )
         for _ in warnings_record:
             assert len(warnings_record) >= 1, warnings_record
@@ -497,7 +483,7 @@ def test_invalid_yml_in_child_metadata(token, unique_uuid):
     """
     Try to upload child with invalid yml in its metadata file.
     """
-    sumo_connection = uploader.SumoConnection(env=ENV, token=token)
+    sumoclient = SumoClient(env=ENV, token=token)
 
     _remove_cached_case_id()
 
@@ -505,7 +491,7 @@ def test_invalid_yml_in_child_metadata(token, unique_uuid):
     _update_metadata_file_with_unique_uuid(case_file, unique_uuid)
     e = uploader.CaseOnDisk(
         case_metadata_path=case_file,
-        sumo_connection=sumo_connection,
+        sumoclient=sumoclient,
     )
     e.register()
 
@@ -527,7 +513,7 @@ def test_invalid_yml_in_child_metadata(token, unique_uuid):
 
     # Assert parent and only 1 valid child are on Sumo
     query = f"{e.fmu_case_uuid}"
-    search_results = sumo_connection.api.get(
+    search_results = sumoclient.get(
         "/search", {"$query": query, "$size": 100}
     ).json()
     total = search_results.get("hits").get("total").get("value")
@@ -536,14 +522,14 @@ def test_invalid_yml_in_child_metadata(token, unique_uuid):
     # Delete this case
     logger.debug("Cleanup after test: delete case")
     path = f"/objects('{e.sumo_parent_id}')"
-    sumo_connection.api.delete(path=path)
+    sumoclient.delete(path=path)
 
 
 def test_schema_error_in_case(token, unique_uuid):
     """
     Try to upload files where case have metadata with error.
     """
-    sumo_connection = uploader.SumoConnection(env=ENV, token=token)
+    sumoclient = SumoClient(env=ENV, token=token)
 
     _remove_cached_case_id()
 
@@ -552,7 +538,7 @@ def test_schema_error_in_case(token, unique_uuid):
     with pytest.warns(UserWarning, match="Registering case on Sumo failed*"):
         e = uploader.CaseOnDisk(
             case_metadata_path=case_file,
-            sumo_connection=sumo_connection,
+            sumoclient=sumoclient,
         )
         e.register()
 
@@ -562,7 +548,7 @@ def test_schema_error_in_child(token, unique_uuid):
     Try to upload files where one does have metadata with error. Assert that warning is given
     and that upload commences with the other files. Check that the children are present.
     """
-    sumo_connection = uploader.SumoConnection(env=ENV, token=token)
+    sumoclient = SumoClient(env=ENV, token=token)
 
     _remove_cached_case_id()
 
@@ -570,7 +556,7 @@ def test_schema_error_in_child(token, unique_uuid):
     _update_metadata_file_with_unique_uuid(case_file, unique_uuid)
     e = uploader.CaseOnDisk(
         case_metadata_path=case_file,
-        sumo_connection=sumo_connection,
+        sumoclient=sumoclient,
     )
     e.register()
 
@@ -591,7 +577,7 @@ def test_schema_error_in_child(token, unique_uuid):
 
     # Assert parent and valid child are on Sumo
     query = f"{e.fmu_case_uuid}"
-    search_results = sumo_connection.api.get(
+    search_results = sumoclient.get(
         "/search", {"$query": query, "$size": 100}
     ).json()
     total = search_results.get("hits").get("total").get("value")
@@ -600,7 +586,7 @@ def test_schema_error_in_child(token, unique_uuid):
     # Delete this case
     logger.debug("Cleanup after test: delete case")
     path = f"/objects('{e.sumo_parent_id}')"
-    sumo_connection.api.delete(path=path)
+    sumoclient.delete(path=path)
 
 
 def _get_segy_path(segy_command):
@@ -650,13 +636,13 @@ def test_openvds_available():
 )
 def test_seismic_openvds_file(token, unique_uuid):
     """Upload seimic in OpenVDS format to Sumo. Assert that it is there."""
-    sumo_connection = uploader.SumoConnection(env=ENV, token=token)
+    sumoclient = SumoClient(env=ENV, token=token)
 
     case_file = "tests/data/test_case_080/case_segy.yml"
     _update_metadata_file_with_unique_uuid(case_file, unique_uuid)
     e = uploader.CaseOnDisk(
         case_metadata_path=case_file,
-        sumo_connection=sumo_connection,
+        sumoclient=sumoclient,
     )
     e.register()
     time.sleep(1)
@@ -671,7 +657,7 @@ def test_seismic_openvds_file(token, unique_uuid):
 
     # Read the parent object from Sumo
     query = f"_sumo.parent_object:{e.fmu_case_uuid}"
-    search_results = sumo_connection.api.get(
+    search_results = sumoclient.get(
         "/search", {"$query": query, "$size": 100}
     ).json()
     total = search_results.get("hits").get("total").get("value")
@@ -690,7 +676,7 @@ def test_seismic_openvds_file(token, unique_uuid):
     # Get SAS token to read seismic directly from az blob store
     child_id = search_results.get("hits").get("hits")[0].get("_id")
     method = f"/objects('{child_id}')/blob/authuri"
-    token_results = sumo_connection.api.get(method).content
+    token_results = sumoclient.get(method).content
     # Sumo server have had 2 different ways of returning the SAS token,
     # and this code should be able to work with both
     try:
@@ -758,7 +744,7 @@ def test_seismic_openvds_file(token, unique_uuid):
 
     # Delete this case
     path = f"/objects('{e.fmu_case_uuid}')"
-    sumo_connection.api.delete(path=path)
+    sumoclient.delete(path=path)
     # Sumo/Azure removes the container which takes some time
     time.sleep(30)
 
@@ -775,7 +761,7 @@ def test_sumo_mode_default(token, unique_uuid):
     """
     Test that SUMO_MODE defaults to copy, i.e. not deleting file after upload.
     """
-    sumo_connection = uploader.SumoConnection(env=ENV, token=token)
+    sumoclient = SumoClient(env=ENV, token=token)
 
     _remove_cached_case_id()
 
@@ -783,7 +769,7 @@ def test_sumo_mode_default(token, unique_uuid):
     _update_metadata_file_with_unique_uuid(case_file, unique_uuid)
     e = uploader.CaseOnDisk(
         case_metadata_path=case_file,
-        sumo_connection=sumo_connection,
+        sumoclient=sumoclient,
     )
     e.register()
 
@@ -802,7 +788,7 @@ def test_sumo_mode_default(token, unique_uuid):
 
     # Assert parent and valid child are on Sumo
     query = f"{e.fmu_case_uuid}"
-    search_results = sumo_connection.api.get(
+    search_results = sumoclient.get(
         "/search", {"$query": query, "$size": 100}
     ).json()
     total = search_results.get("hits").get("total").get("value")
@@ -815,7 +801,7 @@ def test_sumo_mode_default(token, unique_uuid):
     # Delete this case
     logger.debug("Cleanup after test: delete case")
     path = f"/objects('{e.sumo_parent_id}')"
-    sumo_connection.api.delete(path=path)
+    sumoclient.delete(path=path)
 
 
 @pytest.mark.skipif(
@@ -826,7 +812,7 @@ def test_sumo_mode_copy(token, unique_uuid):
     """
     Test SUMO_MODE=copy, i.e. not deleting file after upload.
     """
-    sumo_connection = uploader.SumoConnection(env=ENV, token=token)
+    sumoclient = SumoClient(env=ENV, token=token)
 
     _remove_cached_case_id()
 
@@ -834,7 +820,7 @@ def test_sumo_mode_copy(token, unique_uuid):
     _update_metadata_file_with_unique_uuid(case_file, unique_uuid)
     e = uploader.CaseOnDisk(
         case_metadata_path=case_file,
-        sumo_connection=sumo_connection,
+        sumoclient=sumoclient,
         sumo_mode="copy",
     )
     e.register()
@@ -854,7 +840,7 @@ def test_sumo_mode_copy(token, unique_uuid):
 
     # Assert parent and valid child are on Sumo
     query = f"{e.fmu_case_uuid}"
-    search_results = sumo_connection.api.get(
+    search_results = sumoclient.get(
         "/search", {"$query": query, "$size": 100}
     ).json()
     total = search_results.get("hits").get("total").get("value")
@@ -867,7 +853,7 @@ def test_sumo_mode_copy(token, unique_uuid):
     # Delete this case
     logger.debug("Cleanup after test: delete case")
     path = f"/objects('{e.sumo_parent_id}')"
-    sumo_connection.api.delete(path=path)
+    sumoclient.delete(path=path)
 
 
 @pytest.mark.skipif(
@@ -878,7 +864,7 @@ def test_sumo_mode_move(token, unique_uuid):
     """
     Test SUMO_MODE=move, i.e. deleting file after upload.
     """
-    sumo_connection = uploader.SumoConnection(env=ENV, token=token)
+    sumoclient = SumoClient(env=ENV, token=token)
 
     _remove_cached_case_id()
 
@@ -886,7 +872,7 @@ def test_sumo_mode_move(token, unique_uuid):
     _update_metadata_file_with_unique_uuid(case_file, unique_uuid)
     e = uploader.CaseOnDisk(
         case_metadata_path=case_file,
-        sumo_connection=sumo_connection,
+        sumoclient=sumoclient,
         sumo_mode="moVE",  # test case-insensitive
     )
     e.register()
@@ -917,7 +903,7 @@ def test_sumo_mode_move(token, unique_uuid):
 
     # Assert parent and valid child are on Sumo
     query = f"{e.fmu_case_uuid}"
-    search_results = sumo_connection.api.get(
+    search_results = sumoclient.get(
         "/search", {"$query": query, "$size": 100}
     ).json()
     total = search_results.get("hits").get("total").get("value")
@@ -930,7 +916,7 @@ def test_sumo_mode_move(token, unique_uuid):
     # Delete this case
     logger.debug("Cleanup after test: delete case")
     path = f"/objects('{e.sumo_parent_id}')"
-    sumo_connection.api.delete(path=path)
+    sumoclient.delete(path=path)
 
 
 def test_teardown(token):

@@ -38,10 +38,10 @@ class CaseOnDisk(SumoCase):
         >>> case_metadata_path = 'path/to/case_metadata.yaml'
         >>> search_path = 'path/to/search_path/'
 
-        >>> sumo_connection = sumo.SumoConnection(env=env)
+        >>> sumoclient = sumo.wrapper.SumoClient(env=env)
         >>> case = sumo.CaseOnDisk(
                 case_metadata_path=case_metadata_path,
-                sumo_connection=sumo_connection)
+                sumoclient=sumoclient)
 
         After initialization, files must be explicitly indexed into the CaseOnDisk object:
 
@@ -53,7 +53,7 @@ class CaseOnDisk(SumoCase):
 
     Args:
         case_metadata_path (str): Path to the case_metadata file for the case
-        sumo_connection (fmu.sumo.SumoConnection): SumoConnection object
+        sumoclient (sumo.wrapper.SumoClient): SumoConnection object
 
 
     """
@@ -61,7 +61,7 @@ class CaseOnDisk(SumoCase):
     def __init__(
         self,
         case_metadata_path: str,
-        sumo_connection,
+        sumoclient,
         verbosity=logging.WARNING,
         sumo_mode="copy",
         config_path="fmuconfig/output/global_variables.yml",
@@ -71,7 +71,7 @@ class CaseOnDisk(SumoCase):
 
         Args:
             case_metadata_path (str): Path to case_metadata for case
-            sumo_connection (fmu.sumo.SumoConnection): Connection to Sumo.
+            sumoclient (sumo.wrapper.SumoClient): Connection to Sumo.
             verbosity (str): Python logging level.
         """
 
@@ -83,14 +83,14 @@ class CaseOnDisk(SumoCase):
         case_metadata = _load_case_metadata(case_metadata_path)
         super().__init__(
             case_metadata,
-            sumo_connection,
+            sumoclient,
             verbosity,
             sumo_mode,
             config_path,
             parameters_path,
         )
 
-        self._sumo_logger = sumo_connection.api.getLogger("fmu-sumo-uploader")
+        self._sumo_logger = sumoclient.getLogger("fmu-sumo-uploader")
         self._sumo_logger.setLevel(logging.INFO)
         # Avoid that logging to sumo-server also is visible in local logging:
         self._sumo_logger.propagate = False
@@ -194,7 +194,7 @@ class CaseOnDisk(SumoCase):
     def _upload_case_metadata(self, case_metadata: dict):
         """Upload case metadata to Sumo."""
 
-        response = self.sumo_connection.api.post(
+        response = self.sumoclient.post(
             path="/objects", json=case_metadata
         )
 
