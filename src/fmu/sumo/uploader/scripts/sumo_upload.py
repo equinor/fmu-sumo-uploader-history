@@ -154,6 +154,7 @@ def sumo_upload_main(
         e.upload(threads=threads)
         logger.info("Upload done")
     except Exception as err:
+        err = err.with_traceback(None)
         logger.warning(f"Problem related to Sumo upload: {err} {type(err)}")
         _sumo_logger = sumo_connection.api.getLogger("fmu-sumo-uploader")
         _sumo_logger.propagate = False
