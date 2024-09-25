@@ -10,6 +10,7 @@ import time
 import subprocess
 import warnings
 import httpx
+from azure.storage.blob import BlobClient, ContentSettings
 from fmu.sumo.uploader._logger import get_uploader_logger
 
 
@@ -82,14 +83,16 @@ class SumoFile:
         response = sumoclient.post(path=path, json=self.metadata)
         return response
 
-    def _upload_byte_string(self, sumoclient, object_id, blob_url):
-        response = sumoclient.blob_client.upload_blob(
-            blob=self.byte_string, url=blob_url
-        )
-        return response
+    def _upload_byte_string(self, sumo_connection, object_id, blob_url):
+        blobclient = BlobClient.from_blob_url(blob_url)
+        content_settings = ContentSettings(content_type="application/octet-stream")
+        response = blobclient.upload_blob(self.byte_string, blob_type="BlockBlob", length=len(self.byte_string), overwrite=True, content_settings=content_settings)
+        # response has the form {'etag': '"0x8DCDC8EED1510CC"', 'last_modified': datetime.datetime(2024, 9, 24, 11, 49, 20, tzinfo=datetime.timezone.utc), 'content_md5': bytearray(b'\x1bPM3(\xe1o\xdf(\x1d\x1f\xb9Qm\xd9\x0b'), 'client_request_id': '08c962a4-7a6b-11ef-8710-acde48001122', 'request_id': 'f459ad2b-801e-007d-1977-0ef6ee000000', 'version': '2024-11-04', 'version_id': None, 'date': datetime.datetime(2024, 9, 24, 11, 49, 19, tzinfo=datetime.timezone.utc), 'request_server_encrypted': True, 'encryption_key_sha256': None, 'encryption_scope': None}
+        # ... which is not what the caller expects, so we return something reasonable.
+        return httpx.Response(201)
 
-    def _delete_metadata(self, sumoclient, object_id):
-        logger.warning("Deleting metadata object", object_id)
+    def _delete_metadata(self, sumo_connection, object_id):
+        logger.warning("Deleting metadata object: %s", object_id)
         path = f"/objects('{object_id}')"
         response = sumoclient.delete(path=path)
         return response
@@ -113,7 +116,6 @@ class SumoFile:
             )
             return result
 
-        _t0 = time.perf_counter()
         _t0_metadata = time.perf_counter()
 
         # Uploader converts segy-files to OpenVDS:
@@ -145,6 +147,7 @@ class SumoFile:
             )
             pass
         except (httpx.TimeoutException, httpx.ConnectError) as err:
+            err = err.with_traceback(None)
             logger.warning(
                 f"Metadata upload timeout/connection exception {err} {type(err)}"
             )
@@ -157,6 +160,7 @@ class SumoFile:
             )
             pass
         except httpx.HTTPStatusError as err:
+            err = err.with_traceback(None)
             error_string = (
                 str(err.response.status_code)
                 + err.response.reason_phrase
@@ -176,6 +180,7 @@ class SumoFile:
             )
             pass
         except Exception as err:
+            err = err.with_traceback(None)
             logger.warning(f"Metadata upload exception {err} {type(err)}")
             result.update(
                 {
@@ -253,6 +258,7 @@ class SumoFile:
                         pass
                     pass
                 except Exception as err:
+                    err = err.with_traceback(None)
                     logger.warning(
                         f"Seismic upload exception {err} {type(err)}"
                     )
@@ -280,6 +286,7 @@ class SumoFile:
                 )
                 pass
             except (httpx.TimeoutException, httpx.ConnectError) as err:
+                err = err.with_traceback(None)
                 logger.warning(
                     f"Blob upload failed on timeout/connect {err} {type(err)}"
                 )
@@ -294,6 +301,7 @@ class SumoFile:
                 )
                 pass
             except httpx.HTTPStatusError as err:
+                err = err.with_traceback(None)
                 logger.warning(
                     f"Blob upload failed on status {err} {type(err)} {err.response.text}"
                 )
@@ -308,6 +316,7 @@ class SumoFile:
                 )
                 pass
             except Exception as err:
+                err = err.with_traceback(None)
                 logger.warning(
                     f"Blob upload failed on exception {err} {type(err)}"
                 )
@@ -363,6 +372,7 @@ class SumoFile:
                             metadatafile_path,
                         )
                 except Exception as err:
+                    err = err.with_traceback(None)
                     err_msg = (
                         f"Error deleting file after upload: {err} {type(err)}"
                     )

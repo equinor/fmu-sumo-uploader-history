@@ -148,7 +148,8 @@ def _upload_files(
                 )
             except Exception as e:
                 logger.error(
-                    "Failed to upload realization and iteration objects: %s", e
+                    "Failed to upload realization and iteration objects: %s",
+                    e.with_traceback(None)
                 )
 
             paramfile = create_parameter_file(
