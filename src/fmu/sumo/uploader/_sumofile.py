@@ -83,7 +83,7 @@ class SumoFile:
         response = sumoclient.post(path=path, json=self.metadata)
         return response
 
-    def _upload_byte_string(self, sumo_connection, object_id, blob_url):
+    def _upload_byte_string(self, sumoclient, object_id, blob_url):
         blobclient = BlobClient.from_blob_url(blob_url)
         content_settings = ContentSettings(content_type="application/octet-stream")
         response = blobclient.upload_blob(self.byte_string, blob_type="BlockBlob", length=len(self.byte_string), overwrite=True, content_settings=content_settings)
@@ -91,7 +91,7 @@ class SumoFile:
         # ... which is not what the caller expects, so we return something reasonable.
         return httpx.Response(201)
 
-    def _delete_metadata(self, sumo_connection, object_id):
+    def _delete_metadata(self, sumoclient, object_id):
         logger.warning("Deleting metadata object: %s", object_id)
         path = f"/objects('{object_id}')"
         response = sumoclient.delete(path=path)

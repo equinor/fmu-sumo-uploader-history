@@ -134,7 +134,7 @@ def sumo_upload_main(
 
         e = uploader.CaseOnDisk(
             case_metadata_path,
-            sumo,
+            sumoclient,
             verbosity,
             sumo_mode,
             config_path,
