@@ -9,7 +9,9 @@ except ImportError:
 
 from fmu.sumo.uploader.caseondisk import CaseOnDisk
 from fmu.sumo.uploader.caseonjob import CaseOnJob
-from fmu.sumo.uploader._connection import SumoConnection
+import sumo.wrapper
+
+SumoConnection = sumo.wrapper.SumoClient
 
 # from fmu.sumo.uploader._fileondisk import FileOnDisk
 # from fmu.sumo.uploader._fileonjob import FileOnJob

@@ -78,12 +78,12 @@ class SumoFile:
     def __init__(self):
         return
 
-    def _upload_metadata(self, sumo_connection, sumo_parent_id):
+    def _upload_metadata(self, sumoclient, sumo_parent_id):
         path = f"/objects('{sumo_parent_id}')"
-        response = sumo_connection.api.post(path=path, json=self.metadata)
+        response = sumoclient.post(path=path, json=self.metadata)
         return response
 
-    def _upload_byte_string(self, sumo_connection, object_id, blob_url):
+    def _upload_byte_string(self, sumoclient, object_id, blob_url):
         blobclient = BlobClient.from_blob_url(blob_url)
         content_settings = ContentSettings(content_type="application/octet-stream")
         response = blobclient.upload_blob(self.byte_string, blob_type="BlockBlob", length=len(self.byte_string), overwrite=True, content_settings=content_settings)
@@ -91,13 +91,13 @@ class SumoFile:
         # ... which is not what the caller expects, so we return something reasonable.
         return httpx.Response(201)
 
-    def _delete_metadata(self, sumo_connection, object_id):
+    def _delete_metadata(self, sumoclient, object_id):
         logger.warning("Deleting metadata object: %s", object_id)
         path = f"/objects('{object_id}')"
-        response = sumo_connection.api.delete(path=path)
+        response = sumoclient.delete(path=path)
         return response
 
-    def upload_to_sumo(self, sumo_parent_id, sumo_connection, sumo_mode):
+    def upload_to_sumo(self, sumo_parent_id, sumoclient, sumo_mode):
         """Upload this file to Sumo"""
 
         logger.debug("Starting upload_to_sumo()")
@@ -128,7 +128,7 @@ class SumoFile:
 
         try:
             response = self._upload_metadata(
-                sumo_connection=sumo_connection, sumo_parent_id=sumo_parent_id
+                sumoclient=sumoclient, sumo_parent_id=sumo_parent_id
             )
 
             _t1_metadata = time.perf_counter()
@@ -274,7 +274,7 @@ class SumoFile:
         else:  # non-seismic blob
             try:
                 response = self._upload_byte_string(
-                    sumo_connection=sumo_connection,
+                    sumoclient=sumoclient,
                     object_id=self.sumo_object_id,
                     blob_url=blob_url,
                 )
@@ -352,7 +352,7 @@ class SumoFile:
                 + self.sumo_object_id
             )
             result["status"] = "failed"
-            self._delete_metadata(sumo_connection, self.sumo_object_id)
+            self._delete_metadata(sumoclient, self.sumo_object_id)
         else:
             result["status"] = "ok"
             file_path = self.path

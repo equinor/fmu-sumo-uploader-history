@@ -17,12 +17,12 @@ class CaseOnJob(SumoCase):
     """Initialize the CaseOnJob object."""
 
     def __init__(
-        self, case_metadata: str, sumo_connection, verbosity=logging.DEBUG
+        self, case_metadata: str, sumoclient, verbosity=logging.DEBUG
     ):
-        super().__init__(case_metadata, sumo_connection)
+        super().__init__(case_metadata, sumoclient)
         logger.setLevel(level=verbosity)
 
-        self.sumo_connection = sumo_connection
+        self.sumoclient = sumoclient
 
     @property
     def sumo_parent_id(self):

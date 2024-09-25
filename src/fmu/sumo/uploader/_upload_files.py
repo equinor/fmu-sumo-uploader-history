@@ -24,7 +24,7 @@ def create_parameter_file(
     realization_id,
     parameters_path,
     config_path,
-    sumo_connection,
+    sumoclient,
 ):
     """If not already stored, generate a parameters object from the parameters.txt file
 
@@ -33,7 +33,7 @@ def create_parameter_file(
         realization_id (str): the id of the realization
         parameters_path (str): path to the parameters.txt file
         config_path (str): path to the fmu config file
-        sumo_connection (SumoClient): Initialized sumo client for performing query
+        sumoclient (SumoClient): Initialized sumo client for performing query
 
     Returns:
         SumoFile: parameters ready for upload, or None
@@ -44,7 +44,7 @@ def create_parameter_file(
 
     query = f"fmu.case.uuid:{case_uuid} AND fmu.realization.uuid:{realization_id} AND data.content:parameters"
 
-    search_res = sumo_connection.api.get("/search", {"$query": query}).json()
+    search_res = sumoclient.get("/search", {"$query": query}).json()
 
     if search_res["hits"]["total"]["value"] > 0:
         logger.info("Parameters already uploaded")
@@ -87,11 +87,11 @@ def create_parameter_file(
     return paramfile
 
 
-def maybe_upload_realization_and_iteration(sumo_connection, base_metadata):
+def maybe_upload_realization_and_iteration(sumoclient, base_metadata):
     realization_uuid = base_metadata["fmu"]["realization"]["uuid"]
     iteration_uuid = base_metadata["fmu"]["iteration"]["uuid"]
 
-    hits = sumo_connection.api.post(
+    hits = sumoclient.post(
         "/search",
         json={
             "query": {"ids": {"values": [realization_uuid, iteration_uuid]}},
@@ -116,18 +116,18 @@ def maybe_upload_realization_and_iteration(sumo_connection, base_metadata):
             del iteration_metadata["fmu"]["realization"]
             iteration_metadata["class"] = "iteration"
             iteration_metadata["fmu"]["context"]["stage"] = "iteration"
-            sumo_connection.api.post(
+            sumoclient.post(
                 f"/objects('{case_uuid}')", json=iteration_metadata
             )
 
-        sumo_connection.api.post(
+        sumoclient.post(
             f"/objects('{case_uuid}')", json=realization_metadata
         )
 
 
 def _upload_files(
     files,
-    sumo_connection,
+    sumoclient,
     sumo_parent_id,
     threads=4,
     sumo_mode="copy",
@@ -144,7 +144,7 @@ def _upload_files(
 
             try:
                 maybe_upload_realization_and_iteration(
-                    sumo_connection, file.metadata
+                    sumoclient, file.metadata
                 )
             except Exception as e:
                 logger.error(
@@ -157,7 +157,7 @@ def _upload_files(
                 realization_id,
                 parameters_path,
                 config_path,
-                sumo_connection,
+                sumoclient,
             )
             if paramfile is not None:
                 files.append(paramfile)
@@ -168,7 +168,7 @@ def _upload_files(
         results = executor.map(
             _upload_file,
             [
-                (file, sumo_connection, sumo_parent_id, sumo_mode)
+                (file, sumoclient, sumo_parent_id, sumo_mode)
                 for file in files
             ],
         )
@@ -179,10 +179,10 @@ def _upload_files(
 def _upload_file(args):
     """Upload a file"""
 
-    file, sumo_connection, sumo_parent_id, sumo_mode = args
+    file, sumoclient, sumo_parent_id, sumo_mode = args
 
     result = file.upload_to_sumo(
-        sumo_connection=sumo_connection,
+        sumoclient=sumoclient,
         sumo_parent_id=sumo_parent_id,
         sumo_mode=sumo_mode,
     )
@@ -195,7 +195,7 @@ def _upload_file(args):
 def upload_files(
     files: list,
     sumo_parent_id: str,
-    sumo_connection,
+    sumoclient,
     threads=4,
     sumo_mode="copy",
     config_path="fmuconfig/output/global_variables.yml",
@@ -212,7 +212,7 @@ def upload_files(
 
     results = _upload_files(
         files,
-        sumo_connection,
+        sumoclient,
         sumo_parent_id,
         threads,
         sumo_mode,
