@@ -1,3 +1,4 @@
+
 #!/usr/bin/env python
 
 """Upload data to Sumo from FMU."""
@@ -22,8 +23,7 @@ from fmu.sumo.uploader._logger import get_uploader_logger
 logger = get_uploader_logger()
 
 
-# This documentation is for sumo_uploader as an ERT workflow
-DESCRIPTION = """SUMO_UPLOAD will upload files to Sumo. The typical use case
+description = """SUMO_UPLOAD will upload files to Sumo. The typical use case
 is as add-on to post-processing workflows which aggregate data across an
 ensemble and stores the results outside the realization folders.
 
@@ -37,23 +37,25 @@ to be uploaded to Sumo.
 The ``WF_CREATE_CASE_METADATA`` workflow job must run *before* all SUMO_UPLOAD
 instances to ensure the case is registered in Sumo before data are uploaded.
 
-SUMO_UPLOAD is implemented both as FORWARD_JOB and WORKFLOW_JOB and can be called from
-both contexts when running ERT.
+SUMO_UPLOAD is implemented both as FORWARD_JOB and WORKFLOW_JOB and
+can be called from both contexts when running ERT.
 
-It is recommended to upload files immediately after they are produced, rather than
-lumping all SUMO_UPLOADs at the end of the ERT config file.
+It is recommended to upload files immediately after they are produced,
+rather than lumping all SUMO_UPLOADs at the end of the ERT config
+file.
 
 """
 
-EXAMPLES = """``<SUMO_ENV>`` must be defined. It is typically defined in the ERT config,
-and normally set to ``prod``.
+examples = """``<SUMO_ENV>`` must be defined. It is typically defined
+in the ERT config, and normally set to ``prod``.
 
 ``<SUMO_CASEPATH>`` must be defined. It is typically defined in the ERT config,
 and normally set to ``<SCRATCH>/<USER>/<CASE_DIR>``
 e.g. ``/scratch/myfield/myuser/mycase/``
 
-Note! Filenames produced by FMU workflows use "--" as separator. Avoid this
-string in searchpaths, as it will cause following text to be parsed as a comment.
+Note! Filenames produced by FMU workflows use "--" as separator. Avoid
+this string in searchpaths, as it will cause following text to be
+parsed as a comment.
 
 FORWARD_MODEL example::
 
@@ -67,7 +69,6 @@ WORKFLOW_JOB example::
   SUMO_UPLOAD <SUMO_CASEPATH> "<SUMO_CASEPATH>/share/observations/maps/*.gri"  <SUMO_ENV>
 
 """
-
 
 def main() -> None:
     """Entry point from command line (e.g. ERT FORWARD_JOB)."""
@@ -99,6 +100,10 @@ def main() -> None:
         sumo_mode=args.sumo_mode,
         verbosity=logging.INFO,
     )
+
+
+# May not be necessary.    
+main_entry_point = main
 
 
 def sumo_upload_main(
@@ -285,14 +290,3 @@ def legacy_ertscript_workflow(config):
     workflow.category = "export"
 
 
-@hook_implementation
-@plugin_response(plugin_name="SUMO_UPLOAD")
-def job_documentation(job_name):
-    if job_name != "SUMO_UPLOAD":
-        return None
-
-    return {
-        "description": DESCRIPTION,
-        "examples": EXAMPLES,
-        "category": "export",
-    }

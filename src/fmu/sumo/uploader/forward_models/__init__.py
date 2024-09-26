@@ -5,6 +5,9 @@ from ert import (
     ForwardModelStepValidationError,
 )
 
+from ert.config.forward_model_step import ForwardModelStepDocumentation
+
+from .scripts.sumo_upload import description, examples
 
 class SumoUpload(ForwardModelStepPlugin):
     def __init__(self):
@@ -52,3 +55,12 @@ class SumoUpload(ForwardModelStepPlugin):
 
         if return_code != 0:
             raise ForwardModelStepValidationError(err_msg)
+
+    @staticmethod
+    def documentation() -> Optional[ForwardModelStepDocumentation]:
+        return ForwardModelStepDocumentation(
+            category="utility.filesystem",
+            source_package="fmu-sumo-uploader",
+            source_function_name="SumoUpload",
+            description=description,
+            examples=examples)
