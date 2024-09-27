@@ -36,6 +36,12 @@ docs = [
   "sphinxcontrib-apidoc",
 ]
 
+[project.entry-points."ert"]
+sumo_upload_forward_models = "fmu.sumo.uploader.hook_implementations.forward_models"
+
+[project.entry-points."console_scripts"]
+sumo_upload = "fmu.sumo.upload.forward_models.scripts.sumo_upload:main_entry_point"
+
 [tool.setuptools]
 package-dir = { "" = "src" }
 include-package-data = true
@@ -44,9 +50,3 @@ platforms = ["any"]
 [tool.setuptools.packages.find]
 where = ["src"]
 
-[project.scripts]
-sumo_upload = "fmu.sumo.uploader.scripts.sumo_upload:main"
-
-[project.entry-points.ert]
-fmu_sumo_uploader_jobs = "fmu.sumo.uploader.hook_implementations.jobs"
-sumo_upload = "fmu.sumo.uploader.scripts.sumo_upload"

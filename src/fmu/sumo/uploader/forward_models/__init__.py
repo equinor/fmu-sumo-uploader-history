@@ -1,3 +1,5 @@
+from typing import Optional
+
 import subprocess
 from ert import (
     ForwardModelStepJSON,
@@ -7,7 +9,7 @@ from ert import (
 
 from ert.config.forward_model_step import ForwardModelStepDocumentation
 
-from .scripts.sumo_upload import description, examples
+from .scripts.sumo_upload import description, examples, category
 
 class SumoUpload(ForwardModelStepPlugin):
     def __init__(self):
@@ -59,8 +61,10 @@ class SumoUpload(ForwardModelStepPlugin):
     @staticmethod
     def documentation() -> Optional[ForwardModelStepDocumentation]:
         return ForwardModelStepDocumentation(
-            category="utility.filesystem",
+            category=category,
             source_package="fmu-sumo-uploader",
             source_function_name="SumoUpload",
             description=description,
             examples=examples)
+
+__all__ = ["SumoUpload"]    
