@@ -42,6 +42,9 @@ sumo_upload_forward_models = "fmu.sumo.uploader.hook_implementations.forward_mod
 [project.entry-points."console_scripts"]
 sumo_upload = "fmu.sumo.upload.forward_models.scripts.sumo_upload:main_entry_point"
 
+[project.scripts]
+sumo_upload = "fmu.sumo.upload.forward_models.scripts.sumo_upload:main"
+
 [tool.setuptools]
 package-dir = { "" = "src" }
 include-package-data = true
