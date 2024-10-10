@@ -47,10 +47,8 @@ def create_parameter_file(
     search_res = sumoclient.get("/search", {"$query": query}).json()
 
     if search_res["hits"]["total"]["value"] > 0:
-        logger.info("Parameters already uploaded")
         return None
 
-    logger.info("Trying to read parameters at %s", parameters_path)
     try:
         with open(config_path, "r", encoding="utf-8") as variables_yml:
             global_config = yaml.safe_load(variables_yml)
@@ -76,14 +74,14 @@ def create_parameter_file(
     metadata = exd.generate_metadata(parameters)
 
     if "fmu" not in metadata:
-        logger.warning("No fmu section upload will fail..")
+        logger.warning("No fmu section in metadata. Cannot upload parameters.")
+        return None
 
     bytestring = json.dumps(parameters).encode("utf-8")
     paramfile = FileOnJob(bytestring, metadata)
     paramfile.metadata_path = ""
     paramfile.path = ""
     paramfile.size = len(bytestring)
-    logger.info("Parameters will be uploaded")
     return paramfile
 
 
@@ -120,9 +118,7 @@ def maybe_upload_realization_and_iteration(sumoclient, base_metadata):
                 f"/objects('{case_uuid}')", json=iteration_metadata
             )
 
-        sumoclient.post(
-            f"/objects('{case_uuid}')", json=realization_metadata
-        )
+        sumoclient.post(f"/objects('{case_uuid}')", json=realization_metadata)
 
 
 def _upload_files(
@@ -149,7 +145,7 @@ def _upload_files(
             except Exception as e:
                 logger.error(
                     "Failed to upload realization and iteration objects: %s",
-                    e.with_traceback(None)
+                    e.with_traceback(None),
                 )
 
             paramfile = create_parameter_file(
@@ -167,10 +163,7 @@ def _upload_files(
     with ThreadPoolExecutor(threads) as executor:
         results = executor.map(
             _upload_file,
-            [
-                (file, sumoclient, sumo_parent_id, sumo_mode)
-                for file in files
-            ],
+            [(file, sumoclient, sumo_parent_id, sumo_mode) for file in files],
         )
 
     return results
