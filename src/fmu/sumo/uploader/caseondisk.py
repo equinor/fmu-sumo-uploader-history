@@ -153,8 +153,6 @@ class CaseOnDisk(SumoCase):
             sumo_parent_id (uuid4): Unique ID for this case on Sumo
         """
 
-        logger.info("About to register case on Sumo")
-
         try:
             sumo_parent_id = self._upload_case_metadata(self.case_metadata)
             self._sumo_parent_id = sumo_parent_id
@@ -194,9 +192,7 @@ class CaseOnDisk(SumoCase):
     def _upload_case_metadata(self, case_metadata: dict):
         """Upload case metadata to Sumo."""
 
-        response = self.sumoclient.post(
-            path="/objects", json=case_metadata
-        )
+        response = self.sumoclient.post(path="/objects", json=case_metadata)
 
         returned_object_id = response.json().get("objectid")
 
