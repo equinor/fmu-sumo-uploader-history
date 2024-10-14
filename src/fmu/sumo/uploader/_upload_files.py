@@ -42,12 +42,12 @@ def create_parameter_file(
     bytestring = None
     metadata = None
 
-    query = f"fmu.case.uuid:{case_uuid} AND fmu.realization.uuid:{realization_id} AND data.content:parameters"
+    # query = f"fmu.case.uuid:{case_uuid} AND fmu.realization.uuid:{realization_id} AND data.content:parameters"
 
-    search_res = sumoclient.get("/search", {"$query": query}).json()
+    # search_res = sumoclient.get("/search", {"$query": query}).json()
 
-    if search_res["hits"]["total"]["value"] > 0:
-        return None
+    # if search_res["hits"]["total"]["value"] > 0:
+    #     return None
 
     try:
         with open(config_path, "r", encoding="utf-8") as variables_yml:
