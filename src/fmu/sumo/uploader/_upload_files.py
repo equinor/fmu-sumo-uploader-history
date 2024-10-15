@@ -42,13 +42,6 @@ def create_parameter_file(
     bytestring = None
     metadata = None
 
-    # query = f"fmu.case.uuid:{case_uuid} AND fmu.realization.uuid:{realization_id} AND data.content:parameters"
-
-    # search_res = sumoclient.get("/search", {"$query": query}).json()
-
-    # if search_res["hits"]["total"]["value"] > 0:
-    #     return None
-
     try:
         with open(config_path, "r", encoding="utf-8") as variables_yml:
             global_config = yaml.safe_load(variables_yml)
@@ -82,6 +75,16 @@ def create_parameter_file(
     paramfile.metadata_path = ""
     paramfile.path = ""
     paramfile.size = len(bytestring)
+
+    query = f"fmu.case.uuid:{case_uuid} AND fmu.realization.uuid:{realization_id} AND data.content:parameters"
+    search_res = sumoclient.get("/search", {"$query": query}).json()
+    if (
+        search_res["hits"]["total"]["value"] > 0
+        and search_res["hits"]["hits"][0]["_source"]["_sumo"]["blob_md5"]
+        == paramfile.metadata["_sumo"]["blob_md5"]
+    ):
+        return None
+
     return paramfile
 
 
