@@ -19,14 +19,14 @@ from fmu.sumo.uploader._logger import get_uploader_logger
 logger = get_uploader_logger()
 
 
-def create_parameter_file(
+def get_parameter_file(
     case_uuid,
     realization_id,
     parameters_path,
     config_path,
     sumoclient,
 ):
-    """If not already stored, generate a parameters object from the parameters.txt file
+    """Return a parameters object from the parameters.txt file
 
     Args:
         case_uuid (str): parent uuid for case
@@ -75,15 +75,6 @@ def create_parameter_file(
     paramfile.metadata_path = ""
     paramfile.path = ""
     paramfile.size = len(bytestring)
-
-    query = f"fmu.case.uuid:{case_uuid} AND fmu.realization.uuid:{realization_id} AND data.content:parameters"
-    search_res = sumoclient.get("/search", {"$query": query}).json()
-    if (
-        search_res["hits"]["total"]["value"] > 0
-        and search_res["hits"]["hits"][0]["_source"]["_sumo"]["blob_md5"]
-        == paramfile.metadata["_sumo"]["blob_md5"]
-    ):
-        return None
 
     return paramfile
 
@@ -151,15 +142,25 @@ def _upload_files(
                     e.with_traceback(None),
                 )
 
-            paramfile = create_parameter_file(
-                sumo_parent_id,
-                realization_id,
-                parameters_path,
-                config_path,
-                sumoclient,
-            )
-            if paramfile is not None:
-                files.append(paramfile)
+            query = f"fmu.case.uuid:{sumo_parent_id} AND fmu.realization.uuid:{realization_id} AND data.content:parameters"
+            search_res = sumoclient.get("/search", {"$query": query}).json()
+            if search_res["hits"]["total"]["value"] == 0:
+                paramfile = get_parameter_file(
+                    sumo_parent_id,
+                    realization_id,
+                    parameters_path,
+                    config_path,
+                    sumoclient,
+                )
+                if (
+                    search_res["hits"]["hits"][0]["_source"]["_sumo"][
+                        "blob_md5"
+                    ]
+                    != paramfile.metadata["_sumo"]["blob_md5"]
+                ):
+                    files.append(paramfile)
+                    # return None
+            # if paramfile is not None:
 
             break
 
