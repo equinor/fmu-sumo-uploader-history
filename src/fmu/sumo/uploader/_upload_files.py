@@ -138,19 +138,20 @@ def _upload_files(
                 )
 
             paramfile = get_parameter_file(parameters_path, config_path)
-            # Check if the parameters file does not exist or if it has changed
-            query = f"fmu.case.uuid:{sumo_parent_id} AND fmu.realization.uuid:{realization_id} AND data.content:parameters"
-            search_res = sumoclient.get(
-                "/search", {"$query": query, "$select": "_sumo.blob_md5"}
-            ).json()
-            if (
-                search_res["hits"]["total"]["value"] == 0
-                or search_res["hits"]["hits"][0]["_source"]["_sumo"][
-                    "blob_md5"
-                ]
-                != paramfile.metadata["_sumo"]["blob_md5"]
-            ):
-                files.append(paramfile)
+            if paramfile is not None:
+                query = f"fmu.case.uuid:{sumo_parent_id} AND fmu.realization.uuid:{realization_id} AND data.content:parameters"
+                search_res = sumoclient.get(
+                    "/search", {"$query": query, "$select": "_sumo.blob_md5"}
+                ).json()
+                # Check if the parameters file does not exist or has changed
+                if (
+                    search_res["hits"]["total"]["value"] == 0
+                    or search_res["hits"]["hits"][0]["_source"]["_sumo"][
+                        "blob_md5"
+                    ]
+                    != paramfile.metadata["_sumo"]["blob_md5"]
+                ):
+                    files.append(paramfile)
 
             break
 
