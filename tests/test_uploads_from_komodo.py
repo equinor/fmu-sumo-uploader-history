@@ -83,7 +83,7 @@ def _get_suitable_cases(explorer):
             # Too old for this nightly test
             print("Too old:", case_created, case.uuid)
             continue
-        if len(case.get_realizations()) < 1:
+        if len(case.realizations) < 1:
             # Skip cases wo realizations, typically these are
             # failed runs in komodo-releases / ert
             print("Too few realizations:", case_created, case.uuid)
@@ -119,7 +119,7 @@ def test_case_surfaces(explorer: Explorer):
     cases = _get_suitable_cases(explorer)
     perfect_cases = 0
     for case in cases:
-        realizations = len(case.get_realizations())
+        realizations = len(case.realizations)
         iter_count = 0
         real_count = 0
         preproc_count = 0
@@ -178,7 +178,7 @@ def test_case_tables(explorer: Explorer):
     cases = _get_suitable_cases(explorer)
     perfect_cases = 0
     for case in cases:
-        realizations = len(case.get_realizations())
+        realizations = len(case.realizations)
         iter_count = 0
         real_count = 0
         tagname_count = 0
@@ -249,7 +249,7 @@ def test_case_polygons(explorer: Explorer):
     cases = _get_suitable_cases(explorer)
     perfect_cases = 0
     for case in cases:
-        realizations = len(case.get_realizations())
+        realizations = len(case.realizations)
         iter_count = 0
         real_count = 0
         tagname_count = 0
@@ -305,7 +305,7 @@ def test_case_dictionaries(explorer: Explorer):
     cases = _get_suitable_cases(explorer)
     perfect_cases = 0
     for case in cases:
-        realizations = len(case.get_realizations())
+        realizations = len(case.realizations)
         iter_count = 0
         real_count = 0
         tagname_count = 0
@@ -372,7 +372,7 @@ def test_case_seismic(explorer: Explorer):
     cases = _get_suitable_cases(explorer)
     perfect_cases = 0
     for case in cases:
-        realizations = len(case.get_realizations())
+        realizations = len(case.realizations)
         iter_count = 0
         real_count = 0
         for cube in case.cubes:
