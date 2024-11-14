@@ -46,7 +46,7 @@ class SumoUpload(ForwardModelStepPlugin):
 
         err_msg = (
             "Your config uses Sumo"
-            ", please authenticate using:"
+            ", please authenticate using the command "
             f"sumo_login{f' -e {env}' if env != 'prod' else ''}"
         )
 
