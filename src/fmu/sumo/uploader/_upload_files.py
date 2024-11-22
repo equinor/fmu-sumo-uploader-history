@@ -91,6 +91,7 @@ def maybe_upload_realization_and_iteration(sumoclient, base_metadata):
         del realization_metadata["data"]
         del realization_metadata["file"]
         del realization_metadata["display"]
+        realization_metadata["_sumo"] = {}
         realization_metadata["class"] = "realization"
         realization_metadata["fmu"]["context"]["stage"] = "realization"
 
