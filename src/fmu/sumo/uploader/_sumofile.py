@@ -130,6 +130,15 @@ class SumoFile:
             and self.metadata.get("data").get("format") in ["openvds", "segy"]
         ):
             self.metadata["data"]["format"] = "openvds"
+            if "vertical_domain" not in self.metadata["data"]:
+                result.update(
+                    {
+                        "status": "rejected",
+                        "metadata_upload_response_status_code": 500,
+                        "metadata_upload_response_text": "File upload cannot be attempted; this is a seismic data object but it does not have a value for data.vertical_domain."
+                        }
+                    )
+                return result
 
         try:
             response = self._upload_metadata(
