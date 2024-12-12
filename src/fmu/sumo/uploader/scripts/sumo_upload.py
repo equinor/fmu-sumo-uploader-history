@@ -157,7 +157,7 @@ def sumo_upload_main(
     except Exception as err:
         err = err.with_traceback(None)
         logger.warning(f"Problem related to Sumo upload: {err} {type(err)}")
-        _sumo_logger = sumoclient.getLogger("fmu-sumo-uploader")
+        _sumo_logger = sumoclient.get_logger("fmu-sumo-uploader")
         _sumo_logger.propagate = False
         _sumo_logger.warning(
             "Problem related to Sumo upload for case: %s; %s %s",

@@ -90,7 +90,7 @@ class CaseOnDisk(SumoCase):
             parameters_path,
         )
 
-        self._sumo_logger = sumoclient.getLogger("fmu-sumo-uploader")
+        self._sumo_logger = sumoclient.get_logger("fmu-sumo-uploader")
         self._sumo_logger.setLevel(logging.INFO)
         # Avoid that logging to sumo-server also is visible in local logging:
         self._sumo_logger.propagate = False
