@@ -19,7 +19,7 @@ dependencies = [
 ]
 
 [project.optional-dependencies]
-dev = ["ruff", "pytest"]
+dev = ["ruff", "pytest", "pre-commit"]
 test = ["pytest", "pytest-timeout", "fmu-sumo"]
 
 docs = [
