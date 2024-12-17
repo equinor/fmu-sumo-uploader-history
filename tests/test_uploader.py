@@ -1,3 +1,4 @@
+import contextlib
 import json
 import logging
 import os
@@ -29,10 +30,8 @@ logger.setLevel(level="DEBUG")
 def _remove_cached_case_id():
     """The sumo uploader caches case uuid on disk, but we should remove this
     file between tests"""
-    try:
+    with contextlib.suppress(FileNotFoundError):
         os.remove("tests/data/test_case_080/sumo_parent_id.yml")
-    except FileNotFoundError:
-        pass
 
 
 def _update_metadata_file_with_unique_uuid(metadata_file, unique_case_uuid):
@@ -81,7 +80,7 @@ def test_initialization(token):
     """Assert that the CaseOnDisk object can be initialized"""
     sumoclient = SumoClient(env=ENV, token=token)
 
-    case = uploader.CaseOnDisk(
+    uploader.CaseOnDisk(
         case_metadata_path="tests/data/test_case_080/case.yml",
         sumoclient=sumoclient,
     )
@@ -467,7 +466,7 @@ def test_invalid_yml_in_case_metadata(token, unique_uuid):
     case_file = "tests/data/test_case_080/case_invalid.yml"
     # Invalid yml file, skip _update_metadata_file_with_unique_uuid(case_file, unique_uuid)
     with pytest.warns(UserWarning) as warnings_record:
-        e = uploader.CaseOnDisk(
+        uploader.CaseOnDisk(
             case_metadata_path=case_file,
             sumoclient=sumoclient,
         )
@@ -623,12 +622,12 @@ def _get_segy_path(segy_command):
 )
 def test_openvds_available():
     """Test that OpenVDS is installed and can be successfully called"""
-    path_to_SEGYImport = _get_segy_path("SEGYImport")
-    check_SEGYImport_version = subprocess.run(
-        [path_to_SEGYImport, "--version"], capture_output=True, text=True
+    path_to_segy_import = _get_segy_path("SEGYImport")
+    check_segy_import_version = subprocess.run(
+        [path_to_segy_import, "--version"], capture_output=True, text=True
     )
-    assert check_SEGYImport_version.returncode == 0
-    assert "SEGYImport" in check_SEGYImport_version.stdout
+    assert check_segy_import_version.returncode == 0
+    assert "SEGYImport" in check_segy_import_version.stdout
 
 
 @pytest.mark.skipif(
@@ -689,7 +688,7 @@ def test_seismic_openvds_file(token, unique_uuid):
         url_conn = "Suffix=?" + json.loads(token_results.decode("utf-8")).get(
             "auth"
         )
-    except:
+    except:  # noqa: E722
         token_results = token_results.decode("utf-8")
         url = "azureSAS" + token_results.split("?")[0][5:] + "/"
         url_conn = "Suffix=?" + token_results.split("?")[1]
@@ -706,9 +705,9 @@ def test_seismic_openvds_file(token, unique_uuid):
             exported_filepath = "exported.segy"
             if os.path.exists(exported_filepath):
                 os.remove(exported_filepath)
-            path_to_SEGYExport = _get_segy_path("SEGYExport")
+            path_to_segy_export = _get_segy_path("SEGYExport")
             cmdstr = [
-                path_to_SEGYExport,
+                path_to_segy_export,
                 "--url",
                 url,
                 "--connection",

@@ -89,7 +89,7 @@ class SumoFile:
         content_settings = ContentSettings(
             content_type="application/octet-stream"
         )
-        response = blobclient.upload_blob(
+        blobclient.upload_blob(
             self.byte_string,
             blob_type="BlockBlob",
             length=len(self.byte_string),
