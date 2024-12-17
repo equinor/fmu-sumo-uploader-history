@@ -1,13 +1,15 @@
 """
 
-    The function that uploads files.
+The function that uploads files.
 
 """
 
+import json
 from concurrent.futures import ThreadPoolExecutor
 from copy import deepcopy
-import json
+
 import yaml
+
 from fmu.dataio._utils import read_parameters_txt
 from fmu.dataio.dataio import ExportData
 from fmu.sumo.uploader._fileonjob import FileOnJob

@@ -2,12 +2,15 @@
 
 """Upload data to Sumo from FMU."""
 
-import warnings
-import os
 import argparse
 import logging
+import os
+import warnings
 from pathlib import Path
-from ert.shared.plugins.plugin_manager import hook_implementation  # type: ignore
+
+from ert.shared.plugins.plugin_manager import (
+    hook_implementation,  # type: ignore
+)
 from ert.shared.plugins.plugin_response import plugin_response  # type: ignore
 
 try:
@@ -16,6 +19,7 @@ except ModuleNotFoundError:
     from res.job_queue import ErtScript  # type: ignore
 
 from sumo.wrapper import SumoClient
+
 from fmu.sumo import uploader
 from fmu.sumo.uploader._logger import get_uploader_logger
 

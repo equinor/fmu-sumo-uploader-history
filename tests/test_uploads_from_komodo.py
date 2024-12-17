@@ -1,23 +1,24 @@
-""" Verifies SUMO uploads that has been run by Github Actions in the 
-    komodo-releases repo. See 
-    https://github.com/equinor/komodo-releases/blob/main/.github/workflows/run_drogon.yml
+"""Verifies SUMO uploads that has been run by Github Actions in the
+komodo-releases repo. See
+https://github.com/equinor/komodo-releases/blob/main/.github/workflows/run_drogon.yml
 
-    Verify that the expected number of objects of each expected type have been
-    uploaded. Note that komodo-releases repo usually runs multiple times every
-    day, and that many failed runs is to be expected, i.e. do not expect 
-    every upload to be perfect. 
-    Tests of aggregations are not in scope here, see the Sumo aggregation repo
-    for those tests. 
-    """
+Verify that the expected number of objects of each expected type have been
+uploaded. Note that komodo-releases repo usually runs multiple times every
+day, and that many failed runs is to be expected, i.e. do not expect
+every upload to be perfect.
+Tests of aggregations are not in scope here, see the Sumo aggregation repo
+for those tests.
+"""
 
+import logging
 import os
 import sys
 from datetime import datetime, timedelta, timezone
-import pytest
 from pathlib import Path
-import logging
-from random import seed
-from random import randint
+from random import randint, seed
+
+import pytest
+
 from fmu.sumo.explorer import Explorer
 
 if not sys.platform.startswith("darwin"):
@@ -106,8 +107,8 @@ def test_case_consistency(explorer: Explorer):
         res = explorer._sumo.get(f"/admin/consistency-check?case={case.uuid}")
         metadata_wo_blobs = len(res.json().get("metadata_without_blobs"))
         blobs_wo_metadata = len(res.json().get("blobs_without_metadata"))
-        if (metadata_wo_blobs > 0 or blobs_wo_metadata > 0):
-            print ("NOT consistent case:", case.uuid, res.json())
+        if metadata_wo_blobs > 0 or blobs_wo_metadata > 0:
+            print("NOT consistent case:", case.uuid, res.json())
             non_consistent_cases += 1
 
     print(f"{non_consistent_cases} NON-consistent cases out of {len(cases)}")

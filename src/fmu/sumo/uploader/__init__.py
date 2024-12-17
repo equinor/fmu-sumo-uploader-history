@@ -7,9 +7,10 @@ try:
 except ImportError:
     __version__ = "0.0.0"
 
+import sumo.wrapper
+
 from fmu.sumo.uploader.caseondisk import CaseOnDisk
 from fmu.sumo.uploader.caseonjob import CaseOnJob
-import sumo.wrapper
 
 SumoConnection = sumo.wrapper.SumoClient
 

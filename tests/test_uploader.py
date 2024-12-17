@@ -1,15 +1,16 @@
+import json
+import logging
 import os
+import shutil
+import subprocess
 import sys
-import pytest
 import time
 from pathlib import Path
-import logging
-import subprocess
-import json
-import yaml
-import shutil
 
+import pytest
+import yaml
 from sumo.wrapper import SumoClient
+
 from fmu.sumo import uploader
 
 if not sys.platform.startswith("darwin") and sys.version_info < (3, 12):

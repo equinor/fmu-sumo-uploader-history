@@ -4,15 +4,13 @@ Base class for CaseOnJob and CaseOnDisk classes.
 
 """
 
-import warnings
-import time
 import datetime
 import statistics
+import time
+import warnings
 
-
-from fmu.sumo.uploader._upload_files import upload_files
 from fmu.sumo.uploader._logger import get_uploader_logger
-
+from fmu.sumo.uploader._upload_files import upload_files
 
 # pylint: disable=C0103 # allow non-snake case variable names
 
@@ -218,7 +216,7 @@ def _get_log_msg(sumo_parent_id, status):
                     status.get("blob_upload_response_status_code")
                 ),
                 "response_text": (
-                    (status.get("blob_upload_response_status_text"))
+                    status.get("blob_upload_response_status_text")
                 ),
             },
         }

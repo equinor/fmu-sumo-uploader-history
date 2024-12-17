@@ -1,18 +1,17 @@
 """Objectify an FMU case (results) as it appears on the disk."""
 
-import os
-from pathlib import Path
 import glob
 import logging
+import os
 import warnings
-import httpx
+from pathlib import Path
 
+import httpx
 import yaml
 
-from fmu.sumo.uploader._sumocase import SumoCase
 from fmu.sumo.uploader._fileondisk import FileOnDisk
 from fmu.sumo.uploader._logger import get_uploader_logger
-
+from fmu.sumo.uploader._sumocase import SumoCase
 
 logger = get_uploader_logger()
 

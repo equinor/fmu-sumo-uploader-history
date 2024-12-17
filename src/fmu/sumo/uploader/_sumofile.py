@@ -5,14 +5,15 @@ Base class for FileOnJob and FileOnDisk classes.
 """
 
 import os
+import subprocess
 import sys
 import time
-import subprocess
 import warnings
+
 import httpx
 from azure.storage.blob import BlobClient, ContentSettings
-from fmu.sumo.uploader._logger import get_uploader_logger
 
+from fmu.sumo.uploader._logger import get_uploader_logger
 
 # pylint: disable=C0103 # allow non-snake case variable names
 
@@ -135,9 +136,9 @@ class SumoFile:
                     {
                         "status": "rejected",
                         "metadata_upload_response_status_code": 500,
-                        "metadata_upload_response_text": "File upload cannot be attempted; this is a seismic data object but it does not have a value for data.vertical_domain."
-                        }
-                    )
+                        "metadata_upload_response_text": "File upload cannot be attempted; this is a seismic data object but it does not have a value for data.vertical_domain.",
+                    }
+                )
                 return result
 
         try:

@@ -3,10 +3,9 @@
 import logging
 import warnings
 
-from fmu.sumo.uploader._sumocase import SumoCase
 from fmu.sumo.uploader._fileonjob import FileOnJob
 from fmu.sumo.uploader._logger import get_uploader_logger
-
+from fmu.sumo.uploader._sumocase import SumoCase
 
 logger = get_uploader_logger()
 
