@@ -4,15 +4,13 @@ Base class for CaseOnJob and CaseOnDisk classes.
 
 """
 
-import warnings
-import time
 import datetime
 import statistics
+import time
+import warnings
 
-
-from fmu.sumo.uploader._upload_files import upload_files
 from fmu.sumo.uploader._logger import get_uploader_logger
-
+from fmu.sumo.uploader._upload_files import upload_files
 
 # pylint: disable=C0103 # allow non-snake case variable names
 
@@ -82,7 +80,7 @@ class SumoCase:
         ok_uploads = []
         failed_uploads = []
         rejected_uploads = []
-        files_to_upload = [f for f in self.files]
+        files_to_upload = list(self.files)
 
         _t0 = time.perf_counter()
 
@@ -102,23 +100,20 @@ class SumoCase:
         rejected_uploads += upload_results.get("rejected_uploads")
         failed_uploads = upload_results.get("failed_uploads")
 
-        if rejected_uploads:
-            if any(
-                [
-                    res.get("metadata_upload_response_status_code") in [404]
-                    for res in rejected_uploads
-                ]
-            ):
-                warnings.warn("Case is not registered on Sumo")
-                logger.info(
-                    "Case was not found on Sumo. If you are in the FMU context "
-                    "something may have gone wrong with the case registration "
-                    "or you have not specified that the case shall be uploaded."
-                    "A warning will be issued, and the script will stop. "
-                    "If you are NOT in the FMU context, you can specify that "
-                    "this script also registers the case by passing "
-                    "register=True. This should not be done in the FMU context."
-                )
+        if rejected_uploads and any(
+            res.get("metadata_upload_response_status_code") in [404]
+            for res in rejected_uploads
+        ):
+            warnings.warn("Case is not registered on Sumo")
+            logger.info(
+                "Case was not found on Sumo. If you are in the FMU context "
+                "something may have gone wrong with the case registration "
+                "or you have not specified that the case shall be uploaded."
+                "A warning will be issued, and the script will stop. "
+                "If you are NOT in the FMU context, you can specify that "
+                "this script also registers the case by passing "
+                "register=True. This should not be done in the FMU context."
+            )
 
         _dt = time.perf_counter() - _t0
 
@@ -218,7 +213,7 @@ def _get_log_msg(sumo_parent_id, status):
                     status.get("blob_upload_response_status_code")
                 ),
                 "response_text": (
-                    (status.get("blob_upload_response_status_text"))
+                    status.get("blob_upload_response_status_text")
                 ),
             },
         }
@@ -268,7 +263,7 @@ def _sanitize_datetimes(data):
         return data.isoformat()
 
     if isinstance(data, dict):
-        for key in data.keys():
+        for key in data:
             data[key] = _sanitize_datetimes(data[key])
 
     elif isinstance(data, list):

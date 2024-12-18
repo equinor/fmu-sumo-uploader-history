@@ -16,4 +16,3 @@ def pytest_generate_tests(metafunc):
 
     if "unique_uuid" in metafunc.fixturenames:
         metafunc.parametrize("unique_uuid", [uuid.uuid4()])
-

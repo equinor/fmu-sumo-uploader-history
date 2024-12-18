@@ -2,6 +2,8 @@
 
 [![Documentation Status](https://readthedocs.org/projects/fmu-sumo-uploader/badge/?version=latest)](https://fmu-sumo-uploader.readthedocs.io/en/latest/?badge=latest)
 [![SCM Compliance](https://scm-compliance-api.radix.equinor.com/repos/equinor/fmu-sumo-uploader/badge)](https://scm-compliance-api.radix.equinor.com/repos/equinor/fmu-sumo-uploader/badge)
+[![Ruff](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/astral-sh/ruff/main/assets/badge/v2.json)](https://github.com/astral-sh/ruff)
+
 
 ## Documentation and guidelines
 [fmu-sumo-uploader documentation](https://fmu-sumo-uploader.readthedocs.io/en/latest/)

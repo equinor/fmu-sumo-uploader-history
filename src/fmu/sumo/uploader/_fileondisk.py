@@ -1,19 +1,19 @@
 """
 
-    The FileOnDisk class objectifies a file as it appears
-    on the disk. A file in this context refers to a data/metadata
-    pair (technically two files).
+The FileOnDisk class objectifies a file as it appears
+on the disk. A file in this context refers to a data/metadata
+pair (technically two files).
 
 """
 
-import os
-import hashlib
 import base64
+import hashlib
+import os
+
 import yaml
 
-from fmu.sumo.uploader._sumofile import SumoFile, _path_to_yaml_path
 from fmu.sumo.uploader._logger import get_uploader_logger
-
+from fmu.sumo.uploader._sumofile import SumoFile, _path_to_yaml_path
 
 # pylint: disable=C0103 # allow non-snake case variable names
 
