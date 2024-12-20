@@ -309,7 +309,13 @@ def test_case_with_one_child_and_params(
     ).json()
     hits = search_results["hits"]
     results = hits["hits"]
-    expected_res = ["case", "dictionary", "surface"]
+    expected_res = [
+        "case",
+        "dictionary",
+        "surface",
+        "iteration",
+        "realization",
+    ]
     found_res = []
     for result in results:
         class_type = result["_source"]["class"]
