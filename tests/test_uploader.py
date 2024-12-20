@@ -303,7 +303,9 @@ def test_case_with_one_child_and_params(
     # sumo_upload_main(case_path, search_string, ENV, search_string, 1)
     time.sleep(1)
 
-    query = f"{e.fmu_case_uuid}"
+    query = (
+        f"{e.fmu_case_uuid} AND NOT class:iteration AND NOT class:realization"
+    )
     search_results = sumoclient.get(
         "/search", {"$query": query, "$size": 100}
     ).json()
@@ -313,8 +315,6 @@ def test_case_with_one_child_and_params(
         "case",
         "dictionary",
         "surface",
-        "iteration",
-        "realization",
     ]
     found_res = []
     for result in results:
