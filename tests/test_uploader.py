@@ -642,7 +642,7 @@ def test_seismic_openvds_file(token, unique_uuid):
     time.sleep(1)
 
     # Read the parent object from Sumo
-    query = f"_sumo.parent_object:{e.fmu_case_uuid}"
+    query = f"_sumo.parent_object:{e.fmu_case_uuid} AND NOT class:iteration AND NOT class:realization"
     search_results = sumoclient.get(
         "/search", {"$query": query, "$size": 100}
     ).json()
