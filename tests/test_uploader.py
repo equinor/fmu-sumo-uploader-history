@@ -73,6 +73,14 @@ def _update_metadata_file_absolute_path(metadata_file):
         yaml.dump(parsed_yaml, f)
 
 
+def _hits_for_case(sumoclient, case_uuid):
+    query = f"fmu.case.uuid:{case_uuid} AND NOT class:iteration AND NOT class:realization"
+    search_results = sumoclient.get(
+        "/search", {"$query": query, "$size": 0}
+    ).json()
+    return search_results.get("hits").get("total").get("value")
+
+
 ### TESTS ###
 
 
@@ -190,11 +198,7 @@ def test_case_with_restricted_child(token, unique_uuid):
     e.upload()
     time.sleep(1)
 
-    query = f"{e.fmu_case_uuid}"
-    search_results = sumoclient.get(
-        "/search", {"$query": query, "$size": 100}
-    ).json()
-    total = search_results.get("hits").get("total").get("value")
+    total = _hits_for_case(sumoclient, e.fmu_case_uuid)
     assert total == 2
 
     # Delete this case
@@ -227,11 +231,7 @@ def test_case_with_one_child(token, unique_uuid):
     e.upload()
     time.sleep(1)
 
-    query = f"{e.fmu_case_uuid}"
-    search_results = sumoclient.get(
-        "/search", {"$query": query, "$size": 100}
-    ).json()
-    total = search_results.get("hits").get("total").get("value")
+    total = _hits_for_case(sumoclient, e.fmu_case_uuid)
     assert total == 2
 
     # Delete this case
@@ -350,11 +350,7 @@ def test_case_with_one_child_with_affiliate_access(token, unique_uuid):
     e.upload()
     time.sleep(1)
 
-    query = f"{e.fmu_case_uuid}"
-    search_results = sumoclient.get(
-        "/search", {"$query": query, "$size": 100}
-    ).json()
-    total = search_results.get("hits").get("total").get("value")
+    total = _hits_for_case(sumoclient, e.fmu_case_uuid)
     assert total == 2
 
     # Delete this case
@@ -390,11 +386,7 @@ def test_case_with_no_children(token, unique_uuid):
                 warnings_record[0].message.args[0].startswith("No files found")
             )
 
-    query = f"{e.fmu_case_uuid}"
-    search_results = sumoclient.get(
-        "/search", {"$query": query, "$size": 100}
-    ).json()
-    total = search_results.get("hits").get("total").get("value")
+    total = _hits_for_case(sumoclient, e.fmu_case_uuid)
     assert total == 1
 
     # Delete this case
@@ -442,11 +434,7 @@ def test_missing_child_metadata(token, unique_uuid):
     time.sleep(1)
 
     # Assert parent and valid child is on Sumo
-    query = f"{e.fmu_case_uuid}"
-    search_results = sumoclient.get(
-        "/search", {"$query": query, "$size": 100}
-    ).json()
-    total = search_results.get("hits").get("total").get("value")
+    total = _hits_for_case(sumoclient, e.fmu_case_uuid)
     assert total == 2
 
     # Delete this case
@@ -512,11 +500,7 @@ def test_invalid_yml_in_child_metadata(token, unique_uuid):
     time.sleep(1)
 
     # Assert parent and only 1 valid child are on Sumo
-    query = f"{e.fmu_case_uuid}"
-    search_results = sumoclient.get(
-        "/search", {"$query": query, "$size": 100}
-    ).json()
-    total = search_results.get("hits").get("total").get("value")
+    total = _hits_for_case(sumoclient, e.fmu_case_uuid)
     assert total == 2
 
     # Delete this case
@@ -576,11 +560,7 @@ def test_schema_error_in_child(token, unique_uuid):
     time.sleep(1)
 
     # Assert parent and valid child are on Sumo
-    query = f"{e.fmu_case_uuid}"
-    search_results = sumoclient.get(
-        "/search", {"$query": query, "$size": 100}
-    ).json()
-    total = search_results.get("hits").get("total").get("value")
+    total = _hits_for_case(sumoclient, e.fmu_case_uuid)
     assert total == 2
 
     # Delete this case
@@ -787,11 +767,7 @@ def test_sumo_mode_default(token, unique_uuid):
     time.sleep(1)
 
     # Assert parent and valid child are on Sumo
-    query = f"{e.fmu_case_uuid}"
-    search_results = sumoclient.get(
-        "/search", {"$query": query, "$size": 100}
-    ).json()
-    total = search_results.get("hits").get("total").get("value")
+    total = _hits_for_case(sumoclient, e.fmu_case_uuid)
     assert total == 2
 
     # Assert that child file and metadatafile are not deleted
@@ -839,11 +815,7 @@ def test_sumo_mode_copy(token, unique_uuid):
     time.sleep(1)
 
     # Assert parent and valid child are on Sumo
-    query = f"{e.fmu_case_uuid}"
-    search_results = sumoclient.get(
-        "/search", {"$query": query, "$size": 100}
-    ).json()
-    total = search_results.get("hits").get("total").get("value")
+    total = _hits_for_case(sumoclient, e.fmu_case_uuid)
     assert total == 2
 
     # Assert that child file and metadatafile are not deleted
@@ -902,11 +874,7 @@ def test_sumo_mode_move(token, unique_uuid):
     time.sleep(1)
 
     # Assert parent and valid child are on Sumo
-    query = f"{e.fmu_case_uuid}"
-    search_results = sumoclient.get(
-        "/search", {"$query": query, "$size": 100}
-    ).json()
-    total = search_results.get("hits").get("total").get("value")
+    total = _hits_for_case(sumoclient, e.fmu_case_uuid)
     assert total == 2
 
     # Assert that child file and metadatafile are deleted
