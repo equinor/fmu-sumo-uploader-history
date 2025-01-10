@@ -40,4 +40,5 @@ class FileOnJob(SumoFile):
         ).decode("utf-8")
         self.metadata["file"]["checksum_md5"] = digester.hexdigest()
 
-        # self.metadata["file"]["absolute_path"] = ""
+        if "absolute_path" not in self.metadata["file"]:
+            self.metadata["file"]["absolute_path"] = ""
